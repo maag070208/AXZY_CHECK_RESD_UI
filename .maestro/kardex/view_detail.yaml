@@ -1,0 +1,7 @@
+appId: http://localhost:5002
+---
+- runFlow: ../auth/login_web.yaml
+- tapOn:
+    id: "Ver Detalle" # Maestro for Web often maps 'title' to ID or accessibility label
+- assertVisible: "Detalle del Registro"
+- tapOn: "CERRAR EXPEDIENTE"

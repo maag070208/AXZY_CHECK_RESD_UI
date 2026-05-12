@@ -1,0 +1,7 @@
+appId: http://localhost:5002
+---
+- runFlow: ../auth/login_web.yaml
+- tapOn: "Guardias"
+- assertVisible: "Gestión de Guardias"
+- tapOn: "ACTIVOS"
+- tapOn: "TODOS"

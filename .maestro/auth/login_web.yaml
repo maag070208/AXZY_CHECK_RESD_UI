@@ -1,0 +1,15 @@
+appId: web
+---
+- openLink: "http://localhost:5002"
+
+- waitForAnimationToEnd
+
+- tapOn: "Usuario"
+- inputText: "admin"
+
+- tapOn: "Contraseña"
+- inputText: "123456"
+
+- tapOn: "Entrar al Sistema"
+
+- assertVisible: "Expediente Kardex"

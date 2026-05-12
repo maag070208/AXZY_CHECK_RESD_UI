@@ -1,0 +1,8 @@
+appId: http://localhost:5002
+---
+- runFlow: ../auth/login_web.yaml
+- tapOn: "Historial de recorridos"
+- assertVisible: "Historial de Rondas"
+- tapOn:
+    id: "Detalles"
+- assertVisible: "Expediente de Recorrido"
