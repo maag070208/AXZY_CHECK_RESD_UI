@@ -88,15 +88,9 @@ const RoutesPage = () => {
           <div className="flex items-center gap-2 mb-1">
             <FaBuilding className="text-slate-400 text-[10px]" />
             <span className="font-black text-slate-700 uppercase text-[10px] tracking-widest">
-              {row.recurringLocations?.[0]?.location?.client?.name ||
-                "Sin Cliente"}
+              "SERVICIO OPERATIVO"
             </span>
           </div>
-          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">
-            ID:{" "}
-            {row.recurringLocations?.[0]?.location?.client?.id?.slice(-8) ||
-              "N/A"}
-          </span>
         </div>
       ),
     },
@@ -193,21 +187,6 @@ const RoutesPage = () => {
         icon={FaRoute}
         actions={
           <div className="flex flex-wrap items-center justify-end gap-3 w-full">
-            <div className="w-full sm:w-64">
-              <ITSearchSelect
-                className="!z-20"
-                placeholder="Filtrar por Cliente..."
-                options={(clients || []).map((c: any) => ({
-                  label: c.name,
-                  value: c.id,
-                }))}
-                value={selectedClientId}
-                onChange={(val) => {
-                  setSelectedClientId(val);
-                  setRefreshKey((prev) => prev + 1);
-                }}
-              />
-            </div>
             <div className="w-full sm:w-64 relative">
               <ITInput
                 placeholder="Buscar ruta..."

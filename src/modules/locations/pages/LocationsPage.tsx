@@ -194,7 +194,7 @@ const LocationsPage = () => {
               </div>
               <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5 flex items-center gap-1.5">
                 <FaBuilding size={10} className="text-slate-300" />
-                {row.client?.name || row.clientName || "Sin Cliente"}
+                Acceso Global
               </div>
             </div>
           </div>
@@ -265,18 +265,7 @@ const LocationsPage = () => {
           <>
             <div className="bg-white/50 backdrop-blur-sm border border-slate-100 p-6 rounded-[32px] mb-6 shadow-sm w-full">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
-                <div className="lg:col-span-4">
-                  <ITSearchSelect
-                    className="!z-20"
-                    placeholder="Buscar por Cliente..."
-                    options={(clients || []).map((c: any) => ({
-                      label: c.name,
-                      value: c.id,
-                    }))}
-                    value={selectedClientId}
-                    onChange={(val: any) => setSelectedClientId(val)}
-                  />
-                </div>
+
                 <div className="lg:col-span-4 relative">
                   <ITInput
                     placeholder="Identificación de ubicación..."

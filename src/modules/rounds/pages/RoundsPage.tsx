@@ -151,9 +151,7 @@ const RoundsPage = () => {
               <div className="flex items-center gap-1.5 mt-0.5">
                 <FaBuilding className="text-slate-400 text-[9px]" />
                 <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-                  {row.recurringConfiguration?.client?.name ||
-                    row.client?.name ||
-                    "Sin Cliente"}
+                  N/A
                 </span>
               </div>
             </div>
@@ -253,24 +251,6 @@ const RoundsPage = () => {
         icon={FaRoute}
         actions={
           <div className="flex flex-wrap items-center gap-3 w-full sm:justify-end">
-            {!isResident && (
-              <div className="w-full sm:w-56">
-                <ITSearchSelect
-                  placeholder="FILTRAR POR CLIENTE..."
-                  options={(clients || []).map((c: any) => ({
-                    label: c.name,
-                    value: c.id,
-                  }))}
-                  value={selectedClientId}
-                  onChange={(val) => {
-                    setSelectedClientId(val);
-                    setRefreshKey((prev) => prev + 1);
-                  }}
-                  className="!h-[44px] !rounded-xl"
-                />
-              </div>
-            )}
-
             <div className="relative w-full sm:w-56">
               <FaUser className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
               <ITInput
