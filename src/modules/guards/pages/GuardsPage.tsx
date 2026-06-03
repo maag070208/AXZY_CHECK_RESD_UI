@@ -1,5 +1,4 @@
 import { ModuleHeader } from "@app/core/components/ModuleHeader";
-import { useCatalog } from "@app/core/hooks/catalog.hook";
 import { AppState } from "@app/core/store/store";
 import { showToast } from "@app/core/store/toast/toast.slice";
 import {
@@ -25,7 +24,7 @@ import { getSchedules } from "../../schedules/SchedulesService";
 import {
   getPaginatedUsers,
   updateUser,
-  User,
+  UserResponse,
 } from "../../users/services/UserService";
 import { AssignmentModal } from "../components/AssignmentModal";
 import { ViewAssignmentsModal } from "../components/ViewAssignmentsModal";
@@ -38,19 +37,15 @@ const GuardsPage = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
-  const [selectedGuard, setSelectedGuard] = useState<User | null>(null);
-  const [guardToToggle, setGuardToToggle] = useState<User | null>(null);
+  const [selectedGuard, setSelectedGuard] = useState<UserResponse | null>(null);
+  const [guardToToggle, setGuardToToggle] = useState<UserResponse | null>(null);
   const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
-  const [changingClientUser, setChangingClientUser] = useState<User | null>(
-    null,
-  );
-  const [changingScheduleUser, setChangingScheduleUser] = useState<User | null>(
+  const [changingScheduleUser, setChangingScheduleUser] = useState<UserResponse | null>(
     null,
   );
 
-  const { data: clients } = useCatalog("client");
   const [schedules, setSchedules] = useState<any[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -109,12 +104,12 @@ const GuardsPage = () => {
     setGuardToToggle(null);
   };
 
-  const handleOpenAssignment = (guard: User) => {
+  const handleOpenAssignment = (guard: UserResponse) => {
     setSelectedGuard(guard);
     setIsAssignmentModalOpen(true);
   };
 
-  const handleViewAssignments = (guard: User) => {
+  const handleViewAssignments = (guard: UserResponse) => {
     setSelectedGuard(guard);
     setIsViewModalOpen(true);
   };
@@ -129,7 +124,7 @@ const GuardsPage = () => {
       {
         key: "user",
         label: "Guardia",
-        render: (row: User) => (
+        render: (row: UserResponse) => (
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 font-black border border-slate-100 uppercase text-sm">
               {row.name?.[0]}
@@ -149,7 +144,7 @@ const GuardsPage = () => {
       {
         key: "role",
         label: "ROL / CATEGORÍA",
-        render: (row: User) => {
+        render: (row: UserResponse) => {
           const roleValue = row.role?.value || "S/R";
           const roleName = row.role?.name || "";
           let color: any = "primary";
@@ -165,28 +160,28 @@ const GuardsPage = () => {
         },
       },
       {
-        key: "client",
-        label: "ASIGNACIÓN",
-        render: (row: User) => (
+        key: "schedule",
+        label: "HORARIO / TURNO",
+        render: (row: UserResponse) => (
           <div className="flex flex-col">
             <ITText className="font-black text-slate-700 text-[11px] uppercase tracking-tight mb-1 block">
-              {row.client?.name || "SIN ASIGNAR"}
+              {row.schedule ? row.schedule.name : "SIN HORARIO"}
             </ITText>
-            <div className="flex items-center gap-1.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              <ITText className="text-slate-400 text-[9px] font-black uppercase tracking-widest block">
-                {row.schedule
-                  ? `${row.schedule.name} (${row.schedule.startTime}-${row.schedule.endTime})`
-                  : "SIN HORARIO"}
-              </ITText>
-            </div>
+            {row.schedule && (
+              <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                <ITText className="text-slate-400 text-[9px] font-black uppercase tracking-widest block">
+                  {row.schedule.startTime} - {row.schedule.endTime}
+                </ITText>
+              </div>
+            )}
           </div>
         ),
       },
       {
         key: "status",
         label: "ESTADO",
-        render: (row: User) => (
+        render: (row: UserResponse) => (
           <ITBadget color={row.active ? "success" : "error"} size="small">
             {row.active ? "ACTIVO" : "INACTIVO"}
           </ITBadget>
@@ -195,7 +190,7 @@ const GuardsPage = () => {
       {
         key: "activity",
         label: "OPERATIVIDAD",
-        render: (row: User) => (
+        render: (row: UserResponse) => (
           <div className="flex flex-col">
             <ITText className="font-black text-slate-700 text-[11px] uppercase tracking-tight mb-1 block">
               {row.assignmentLogs?.length || 0} Tareas
@@ -212,7 +207,7 @@ const GuardsPage = () => {
       {
         key: "actions",
         label: "CONTROL",
-        render: (row: User) => (
+        render: (row: UserResponse) => (
           <div className="flex items-center gap-2">
             {!isClient && (
               <>
@@ -224,14 +219,6 @@ const GuardsPage = () => {
                   color="warning"
                 >
                   <FaClock size={14} />
-                </ITButton>
-                <ITButton
-                  onClick={() => setChangingClientUser(row)}
-                  variant="outlined"
-                  size="small"
-                  title="Cliente"
-                >
-                  <FaUserShield size={14} />
                 </ITButton>
                 <ITButton
                   onClick={() => setGuardToToggle(row)}
@@ -272,7 +259,7 @@ const GuardsPage = () => {
   );
 
   return (
-    <div className="p-6   min-h-screen font-sans">
+    <div className="p-6 min-h-screen font-sans">
       <ModuleHeader
         title="Directorio de Guardias"
         subtitle="Gestión de personal operativo, asignaciones y controles de turno"
@@ -297,8 +284,8 @@ const GuardsPage = () => {
         }
       />
 
-      <div className="bg-white rounded-[24px] shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden">
-        <ITDataTable<User & Record<string, unknown>>
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <ITDataTable<UserResponse & Record<string, unknown>>
           key={refreshKey}
           fetchData={memoizedFetch as any}
           columns={columns as any}
@@ -307,68 +294,6 @@ const GuardsPage = () => {
           title=""
         />
       </div>
-
-      {/* CLIENT REASSIGN DIALOG */}
-      <ITDialog
-        isOpen={!!changingClientUser}
-        onClose={() => setChangingClientUser(null)}
-        className="!max-w-md !w-full"
-      >
-        <div className="p-10 space-y-8">
-          <div className="flex flex-col items-center text-center space-y-4">
-            <div className="w-20 h-20 rounded-3xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100 shadow-sm">
-              <FaUserShield size={40} />
-            </div>
-            <div>
-              <ITText className="text-xl font-black text-slate-800 uppercase tracking-tight block">
-                Reasignar Cliente
-              </ITText>
-              <ITText className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mt-1 block">
-                {changingClientUser?.name} {changingClientUser?.lastName}
-              </ITText>
-            </div>
-          </div>
-
-          <ITSelect
-            label="Seleccionar Cliente Destino"
-            name="clientId"
-            placeholder="BUSCAR CLIENTE..."
-            options={
-              clients.map((c) => ({ label: c.name, value: c.id })) as any
-            }
-            value={changingClientUser?.clientId || ""}
-            onChange={(e: any) => {
-              const val = e.target.value;
-              if (!changingClientUser) return;
-              updateUser(changingClientUser.id, {
-                clientId: val as string,
-              }).then((res) => {
-                if (res.success) {
-                  dispatch(
-                    showToast({
-                      message: "Cliente reasignado",
-                      type: "success",
-                    }),
-                  );
-                  refreshTable();
-                  setChangingClientUser(null);
-                }
-              });
-            }}
-            className="!h-14 !rounded-2xl !bg-slate-50/50"
-          />
-
-          <div className="flex justify-center pt-4">
-            <ITButton
-              variant="ghost"
-              onClick={() => setChangingClientUser(null)}
-              className="px-10 font-black text-[10px] uppercase tracking-widest text-slate-400"
-            >
-              Cancelar
-            </ITButton>
-          </div>
-        </div>
-      </ITDialog>
 
       {/* SCHEDULE REASSIGN DIALOG */}
       <ITDialog
@@ -452,7 +377,7 @@ const GuardsPage = () => {
           </ITText>
           <ITText className="text-slate-500 text-[11px] font-bold uppercase tracking-widest leading-relaxed mb-10 max-w-xs mx-auto block">
             {guardToToggle?.active
-              ? "El guardia perderá el acceso a la aplicación móvil y sus turnos activos serán suspendidos."
+              ? "El guardia perderá el acceso a la application móvil y sus turnos activos serán suspendidos."
               : "El guardia recuperará el acceso y podrá retomar sus tareas y turnos asignados."}
           </ITText>
           <div className="flex gap-4 justify-center">
@@ -491,7 +416,6 @@ const GuardsPage = () => {
             guardId={selectedGuard.id}
             guardName={`${selectedGuard.name} ${selectedGuard.lastName}`}
             guard={selectedGuard}
-            onReassignClient={() => setChangingClientUser(selectedGuard)}
             onReassignSchedule={() => setChangingScheduleUser(selectedGuard)}
             isClient={isClient}
           />

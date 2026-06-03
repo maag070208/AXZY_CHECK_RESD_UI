@@ -213,7 +213,7 @@ const MaintenancesPage = () => {
   );
 
   return (
-    <div className="p-6   min-h-screen font-sans">
+    <div className="p-6 min-h-screen font-sans">
       <ModuleHeader
         title="Gestión de Mantenimientos"
         subtitle="Monitoreo y resolución de desperfectos en instalaciones"
@@ -237,7 +237,7 @@ const MaintenancesPage = () => {
           />
         }
       />
-      <div className="bg-white rounded-[24px] shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <ITDataTable<Maintenance & Record<string, unknown>>
           key={`${refreshKey}-${guardsCatalog?.length || 0}`}
           fetchData={memoizedFetch as any}

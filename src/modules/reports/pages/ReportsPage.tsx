@@ -1,6 +1,6 @@
 import { ModuleHeader } from "@app/core/components/ModuleHeader";
 import { showToast } from "@app/core/store/toast/toast.slice";
-import { ITBadget, ITButton, ITDataTable } from "@axzydev/axzy_ui_system";
+import { ITBadget, ITButton, ITDataTable, ITDialog, ITText } from "@axzydev/axzy_ui_system";
 import dayjs from "dayjs";
 import { useCallback, useState } from "react";
 import {
@@ -24,10 +24,10 @@ import { generateAdministrativeMatrixPDF } from "../services/ReportsService";
 const ReportsPage = () => {
   const dispatch = useDispatch();
   const [refreshKey, setRefreshKey] = useState(0);
+  const [configToDeleteId, setConfigToDeleteId] = useState<string | null>(null);
 
   const [aperturaCierreOpen, setAperturaCierreOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedClientId] = useState("");
   const [isGenerating, setIsGenerating] = useState<string | null>(null);
   const [configToEdit, setConfigToEdit] = useState<any>(null);
 
@@ -36,7 +36,6 @@ const ReportsPage = () => {
       const res = await getPaginatedReportConfigurations({
         ...params,
         searchTerm,
-        clientId: selectedClientId || undefined,
       });
 
       return res.success
@@ -49,7 +48,7 @@ const ReportsPage = () => {
             total: 0,
           };
     },
-    [searchTerm, selectedClientId],
+    [searchTerm],
   );
 
   const handleGenerateSavedReport = async (configRow: any) => {
@@ -117,26 +116,30 @@ const ReportsPage = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm("¿Está seguro de eliminar esta configuración?")) {
-      const res = await deleteReportConfiguration(id);
-      if (res.success) {
-        dispatch(
-          showToast({
-            message: "Configuración eliminada",
-            type: "success",
-          }),
-        );
-        setRefreshKey((prev) => prev + 1);
-      } else {
-        dispatch(
-          showToast({
-            message: "Error al eliminar configuración",
-            type: "error",
-          }),
-        );
-      }
+  const handleDelete = (id: string) => {
+    setConfigToDeleteId(id);
+  };
+
+  const confirmDeleteConfig = async () => {
+    if (!configToDeleteId) return;
+    const res = await deleteReportConfiguration(configToDeleteId);
+    if (res.success) {
+      dispatch(
+        showToast({
+          message: "Configuración eliminada",
+          type: "success",
+        }),
+      );
+      setRefreshKey((prev) => prev + 1);
+    } else {
+      dispatch(
+        showToast({
+          message: "Error al eliminar configuración",
+          type: "error",
+        }),
+      );
     }
+    setConfigToDeleteId(null);
   };
 
   const columns = [
@@ -148,12 +151,6 @@ const ReportsPage = () => {
           <span className="font-black text-slate-700 text-[11px] uppercase tracking-tight mb-1">
             {row.name}
           </span>
-          <div className="flex items-center gap-1.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            <span className="text-slate-400 text-[9px] font-black uppercase tracking-widest">
-              {row.client?.name || "Global"}
-            </span>
-          </div>
         </div>
       ),
     },
@@ -217,7 +214,7 @@ const ReportsPage = () => {
           <ITButton
             onClick={() => handleDelete(row.id)}
             variant="outlined"
-            color="error"
+            color="danger"
             title="Eliminar"
             size="small"
           >
@@ -229,7 +226,7 @@ const ReportsPage = () => {
   ];
 
   return (
-    <div className="p-6   min-h-screen font-sans">
+    <div className="p-6 min-h-screen font-sans">
       <ModuleHeader
         title="Reportes Guardados"
         subtitle="Generación de documentos y matrices de rendimiento"
@@ -306,7 +303,7 @@ const ReportsPage = () => {
         <h2 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-6">
           Configuraciones Guardadas
         </h2>
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           <ITDataTable
             key={refreshKey}
             columns={columns as any}
@@ -314,6 +311,41 @@ const ReportsPage = () => {
           />
         </div>
       </div>
+
+      <ITDialog
+        isOpen={!!configToDeleteId}
+        onClose={() => setConfigToDeleteId(null)}
+        title="Eliminar Configuración"
+      >
+        <div className="p-10 text-center">
+          <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-rose-100 shadow-sm">
+            <FaTrash size={32} />
+          </div>
+          <ITText className="text-xl font-black text-slate-800 uppercase tracking-tight mb-3">
+            ¿Eliminar Configuración?
+          </ITText>
+          <ITText className="text-slate-500 text-[11px] font-bold uppercase tracking-widest leading-relaxed mb-10 max-w-xs mx-auto block">
+            Esta acción es permanente y no se puede deshacer.
+          </ITText>
+          <div className="flex gap-4 justify-center">
+            <ITButton
+              variant="ghost"
+              className="px-8 font-black text-[11px] uppercase tracking-widest text-slate-400"
+              onClick={() => setConfigToDeleteId(null)}
+            >
+              Cancelar
+            </ITButton>
+            <ITButton
+              variant="filled"
+              color="danger"
+              className="px-10 !rounded-2xl shadow-xl shadow-rose-200"
+              onClick={confirmDeleteConfig}
+            >
+              ELIMINAR AHORA
+            </ITButton>
+          </div>
+        </div>
+      </ITDialog>
 
       {/* MODAL: CONFIGURACION APERTURA / CIERRE */}
       <AperturaCierreReportModal

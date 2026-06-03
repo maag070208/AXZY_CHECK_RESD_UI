@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { ITButton, ITDialog, ITInput } from "@axzydev/axzy_ui_system";
 import { FaPlus, FaTrash, FaEdit, FaTimes, FaLayerGroup } from "react-icons/fa";
-import { getZonesByClient, createZone, updateZone, deleteZone, Zone } from "../services/ZonesService";
+import { getZones, createZone, updateZone, deleteZone, Zone } from "../services/ZonesService";
 import { showToast } from "@app/core/store/toast/toast.slice";
 import { showLoader, hideLoader } from "@app/core/store/loader/loader.slice";
 import { useDispatch } from "react-redux";
@@ -9,37 +9,36 @@ import { useDispatch } from "react-redux";
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  clientId: string;
-  clientName: string;
 }
 
-export const ZonesModal = ({ isOpen, onClose, clientId, clientName }: Props) => {
+export const ZonesModal = ({ isOpen, onClose }: Props) => {
   const dispatch = useDispatch();
   const [zones, setZones] = useState<Zone[]>([]);
   const [newZoneName, setNewZoneName] = useState("");
   const [editingZone, setEditingZone] = useState<Zone | null>(null);
 
   const fetchZones = async () => {
-    if (!clientId) return;
     try {
-      const data = await getZonesByClient(clientId);
-      setZones(data);
+      const res = await getZones();
+      if (res.success) {
+        setZones(res.data || []);
+      }
     } catch (error) {
       console.error("Error fetching zones", error);
     }
   };
 
   useEffect(() => {
-    if (isOpen && clientId) {
+    if (isOpen) {
       fetchZones();
     }
-  }, [isOpen, clientId]);
+  }, [isOpen]);
 
   const handleCreate = async () => {
     if (!newZoneName.trim()) return;
     dispatch(showLoader());
     try {
-      await createZone({ clientId, name: newZoneName });
+      await createZone({ name: newZoneName });
       setNewZoneName("");
       await fetchZones();
       dispatch(showToast({ message: "Zona registrada con éxito", type: "success" }));
@@ -83,7 +82,7 @@ export const ZonesModal = ({ isOpen, onClose, clientId, clientName }: Props) => 
     <ITDialog 
       isOpen={isOpen} 
       onClose={onClose} 
-      title={`Zonas del Cliente - ${clientName}`}
+      title="Administración de Zonas / Recurrentes"
     >
       <div className="flex flex-col bg-white overflow-hidden max-h-[85vh]">
         <div className="p-10 space-y-10 overflow-y-auto custom-scrollbar">

@@ -27,10 +27,6 @@ export const updateAssignmentStatus = async (id: number, status: string) => {
     return await patch<Assignment>(`/assignments/${id}/status`, { status });
 };
 
-export const getAssignmentsByClient = async (clientId: string | number) => {
-    return await get<Assignment[]>(`/assignments?clientId=${clientId}`);
-};
-
 export const getAssignmentsDataTable = async (params: ITDataTableFetchParams): Promise<ITDataTableResponse<Assignment>> => {
     return await fetchDataTable<Assignment>("/assignments/datatable", params);
 };

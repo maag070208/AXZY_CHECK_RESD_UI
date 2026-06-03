@@ -38,7 +38,7 @@ const customTheme = {
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <Provider store={store}>
-      <ITThemeProvider theme={customTheme} showFab={false}>
+      <ITThemeProvider theme={customTheme} showFab={true}>
         <ToastProvider>
           <HashRouter>
             <App />

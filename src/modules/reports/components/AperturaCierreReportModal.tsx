@@ -1,4 +1,3 @@
-import { post } from "@app/core/axios/axios";
 import { showToast } from "@app/core/store/toast/toast.slice";
 import {
   ITButton,
@@ -6,7 +5,6 @@ import {
   ITDialog,
   ITInput,
   ITLoader,
-  ITSearchSelect,
 } from "@axzydev/axzy_ui_system";
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
@@ -36,8 +34,6 @@ export const AperturaCierreReportModal = ({
   const [selectedConfigIds, setSelectedConfigIds] = useState<string[]>([]);
 
   const [name, setName] = useState("");
-  const [clients, setClients] = useState<any[]>([]);
-  const [selectedClientId, setSelectedClientId] = useState<string>("");
 
   const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([
     dayjs().startOf("month").toDate(),
@@ -50,11 +46,6 @@ export const AperturaCierreReportModal = ({
     if (!isOpen) return;
 
     setLoadingConfig(true);
-    post("/clients/datatable", { page: 1, limit: 1000 }).then((res: any) => {
-      if (res.success && res.data) {
-        setClients(res.data.rows || []);
-      }
-    });
 
     getRecurringConfigurationsList()
       .then((res) => {
@@ -66,7 +57,6 @@ export const AperturaCierreReportModal = ({
 
     if (configToEdit) {
       setName(configToEdit.name || "");
-      setSelectedClientId(configToEdit.clientId || "");
       setSelectedConfigIds(
         configToEdit.configuration?.recurringConfigurationIds || [],
       );
@@ -86,7 +76,6 @@ export const AperturaCierreReportModal = ({
       }
     } else {
       setName("");
-      setSelectedClientId("");
       setSelectedConfigIds([]);
       setDateRange([
         dayjs().startOf("month").toDate(),
@@ -95,12 +84,7 @@ export const AperturaCierreReportModal = ({
     }
   }, [isOpen, configToEdit]);
 
-  const filteredConfigurations = selectedClientId
-    ? configurations.filter(
-        (c) =>
-          c.clientId === selectedClientId || c.client?.id === selectedClientId,
-      )
-    : [];
+  const filteredConfigurations = configurations;
 
   const toggleConfig = (id: string) => {
     setSelectedConfigIds((prev) =>
@@ -147,7 +131,6 @@ export const AperturaCierreReportModal = ({
     const payload = {
       name,
       reportType: "ADMINISTRATIVE_MATRIX",
-      clientId: selectedClientId || null,
       configuration: {
         recurringConfigurationIds: selectedConfigIds,
         startDate: startDateStr,
@@ -254,84 +237,53 @@ export const AperturaCierreReportModal = ({
             </div>
           </section>
 
-          {/* Cliente */}
+          {/* Rutas */}
           <section>
             <div className="flex items-center gap-2 mb-8">
               <div className="w-1.5 h-4 bg-emerald-500 rounded-full" />
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                CLIENTE
+                RUTAS INCLUIDAS ({selectedConfigIds.length})
               </h4>
             </div>
-            <div className="mb-8">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
-                Filtrar Rutas por Cliente
-              </label>
-              <ITSearchSelect
-                placeholder="SELECCIONE UN CLIENTE..."
-                options={clients.map((c) => ({
-                  label: c.name,
-                  value: c.id,
-                }))}
-                value={selectedClientId}
-                onChange={(val) => {
-                  setSelectedClientId(val as any);
-                  setSelectedConfigIds([]); // Reset selection when client changes
-                }}
-              />
-            </div>
-          </section>
 
-          {/* Rutas */}
-          {selectedClientId && (
-            <section>
-              <div className="flex items-center gap-2 mb-8">
-                <div className="w-1.5 h-4 bg-emerald-500 rounded-full" />
-                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                  RUTAS A INCLUIDAS ({selectedConfigIds.length})
-                </h4>
+            {loadingConfig ? (
+              <div className="flex justify-center p-10 bg-slate-50 rounded-2xl border border-slate-100">
+                <ITLoader size="md" />
               </div>
-
-              {loadingConfig ? (
-                <div className="flex justify-center p-10 bg-slate-50 rounded-2xl border border-slate-100">
-                  <ITLoader size="md" />
-                </div>
-              ) : filteredConfigurations.length > 0 ? (
-                <div className="bg-slate-50 border border-slate-100 rounded-2xl overflow-hidden max-h-[300px] overflow-y-auto">
-                  {filteredConfigurations.map((config) => {
-                    const isSelected = selectedConfigIds.includes(config.id);
-                    return (
+            ) : filteredConfigurations.length > 0 ? (
+              <div className="bg-slate-50 border border-slate-100 rounded-2xl overflow-hidden max-h-[300px] overflow-y-auto">
+                {filteredConfigurations.map((config) => {
+                  const isSelected = selectedConfigIds.includes(config.id);
+                  return (
+                    <div
+                      key={config.id}
+                      onClick={() => toggleConfig(config.id)}
+                      className={`flex items-center gap-4 p-4 cursor-pointer transition-all border-b border-slate-100 last:border-0 hover:bg-slate-100 ${isSelected ? "bg-emerald-50/50" : ""}`}
+                    >
                       <div
-                        key={config.id}
-                        onClick={() => toggleConfig(config.id)}
-                        className={`flex items-center gap-4 p-4 cursor-pointer transition-all border-b border-slate-100 last:border-0 hover:bg-slate-100 ${isSelected ? "bg-emerald-50/50" : ""}`}
+                        className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${isSelected ? "bg-emerald-600 text-white" : "bg-white border-2 border-slate-300"}`}
                       >
-                        <div
-                          className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${isSelected ? "bg-emerald-600 text-white" : "bg-white border-2 border-slate-300"}`}
-                        >
-                          {isSelected && <FaCheckCircle size={12} />}
-                        </div>
-                        <div className="flex flex-col">
-                          <span
-                            className={`text-sm font-bold tracking-tight uppercase ${isSelected ? "text-emerald-900" : "text-slate-700"}`}
-                          >
-                            {config.title}
-                          </span>
-                        </div>
+                        {isSelected && <FaCheckCircle size={12} />}
                       </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="p-10 bg-slate-50 rounded-2xl border border-slate-100 text-center">
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                    {selectedClientId
-                      ? "Este cliente no tiene rutas configuradas"
-                      : "Seleccione un cliente primero"}
-                  </p>
-                </div>
-              )}
-            </section>
-          )}
+                      <div className="flex flex-col">
+                        <span
+                          className={`text-sm font-bold tracking-tight uppercase ${isSelected ? "text-emerald-900" : "text-slate-700"}`}
+                        >
+                          {config.title}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="p-10 bg-slate-50 rounded-2xl border border-slate-100 text-center">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                  No hay rutas configuradas
+                </p>
+              </div>
+            )}
+          </section>
         </div>
 
         <div className="flex-none flex justify-end items-center px-10 py-8 border-t border-slate-100 bg-slate-50/50 gap-4">

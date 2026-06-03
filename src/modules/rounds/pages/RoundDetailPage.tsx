@@ -5,7 +5,6 @@ import dayjs from "dayjs";
 import { useEffect, useMemo, useState } from "react";
 import {
   FaArrowLeft,
-  FaBuilding,
   FaCalendarAlt,
   FaCheckCircle,
   FaClock,
@@ -116,7 +115,6 @@ const RoundDetailPage = () => {
 
     const expectedLocs =
       data.round.recurringConfiguration?.recurringLocations ||
-      data.round.client?.locations?.map((l: any) => ({ location: l })) ||
       [];
     const missingLocs = expectedLocs.filter(
       (l: any) => !visitedLocations.has(String(l.location.id)),
@@ -224,7 +222,7 @@ const RoundDetailPage = () => {
 
   if (loading)
     return (
-      <div className="min-h-screen   flex flex-col items-center justify-center space-y-4">
+      <div className="p-6 min-h-screen font-sans flex flex-col items-center justify-center space-y-4">
         <ITLoader />
         <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">
           Sincronizando ruta...
@@ -234,7 +232,7 @@ const RoundDetailPage = () => {
 
   if (!data)
     return (
-      <div className="min-h-screen   flex items-center justify-center p-6">
+      <div className="min-h-screen font-sans flex items-center justify-center p-6">
         <div className="text-center bg-white rounded-[32px] shadow-xl p-12 max-w-md border border-slate-100">
           <div className="w-20 h-20 bg-rose-50 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-rose-100">
             <FaExclamationTriangle className="text-rose-500 text-3xl" />
@@ -261,7 +259,7 @@ const RoundDetailPage = () => {
     `Ronda #${data.round.id}`;
 
   return (
-    <div className="min-h-screen   pb-20">
+    <div className="p-6 min-h-screen font-sans pb-20">
       <div className="bg-white border-b border-slate-100 sticky top-0 z-30 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <button
@@ -320,11 +318,6 @@ const RoundDetailPage = () => {
                 icon={<FaUserShield className="text-blue-500" />}
                 label="Guardia"
                 value={`${data.round.guard.name} ${data.round.guard.lastName}`}
-              />
-              <HeaderMetric
-                icon={<FaBuilding className="text-slate-500" />}
-                label="Cliente"
-                value={data.round.client?.name || "Sin Cliente"}
               />
               <HeaderMetric
                 icon={<FaCalendarAlt className="text-emerald-500" />}

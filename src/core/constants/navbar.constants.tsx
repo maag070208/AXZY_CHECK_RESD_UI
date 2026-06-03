@@ -1,19 +1,13 @@
 import { AppState } from "@app/core/store/store";
 import LOGO from "@assets/logo.png";
 import {
-  FaBook,
   FaBuilding,
-  FaChild,
-  FaClock,
   FaCogs,
   FaExclamationTriangle,
   FaHome,
-  FaListAlt,
-  FaRoute,
-  FaSearchLocation,
-  FaUserShield,
-  FaWrench,
-  FaChartBar
+  FaMoneyBill,
+  FaShieldAlt,
+  FaUsers,
 } from "react-icons/fa";
 import { useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -26,7 +20,7 @@ export const useNavigationItems = (): any[] => {
   const isRouteActive = (path: string, subroutes?: string[]) => {
     if (subroutes?.length) {
       return subroutes.some((subroute) =>
-        location.pathname.startsWith(subroute)
+        location.pathname.startsWith(subroute),
       );
     }
     return (
@@ -40,104 +34,192 @@ export const useNavigationItems = (): any[] => {
       label: "Inicio",
       action: () => navigate("/home"),
       isActive: isRouteActive("/home"),
-      icon: <FaHome  />,
+      icon: <FaHome />,
     },
     {
-      id: "clients",
-      label: "Clientes",
-      action: () => navigate("/clients"),
-      isActive: isRouteActive("/clients"),
-      icon: <FaBuilding  />,
+      id: "residencial",
+      label: "Residencial",
+      icon: <FaBuilding />,
+      isActive: isRouteActive("/residents") || isRouteActive("/properties") || isRouteActive("/locations"),
+      subitems: [
+        {
+          id: "residents",
+          label: "Residentes",
+          action: () => navigate("/residents"),
+          isActive: isRouteActive("/residents"),
+        },
+        {
+          id: "properties",
+          label: "Propiedades",
+          action: () => navigate("/properties"),
+          isActive: isRouteActive("/properties"),
+        },
+        {
+          id: "locations",
+          label: "Ubicaciones",
+          action: () => navigate("/locations"),
+          isActive: isRouteActive("/locations"),
+        },
+      ]
     },
     {
-      id: "locations",
-      label: "Ubicaciones",
-      action: () => navigate("/locations"),
-      isActive: isRouteActive("/locations"),
-      icon: <FaSearchLocation  />,
+      id: "operacion",
+      label: "Operación",
+      icon: <FaExclamationTriangle />,
+      isActive: isRouteActive("/accesses") || isRouteActive("/incidents") || isRouteActive("/maintenances") || isRouteActive("/kardex") || isRouteActive("/complaints"),
+      subitems: [
+        {
+          id: "accesses",
+          label: "Control de Accesos",
+          action: () => navigate("/accesses"),
+          isActive: isRouteActive("/accesses"),
+        },
+        {
+          id: "incidents",
+          label: "Incidencias",
+          action: () => navigate("/incidents"),
+          isActive: isRouteActive("/incidents"),
+        },
+        {
+          id: "maintenances",
+          label: "Mantenimientos",
+          action: () => navigate("/maintenances"),
+          isActive: isRouteActive("/maintenances"),
+        },
+        {
+          id: "kardex",
+          label: "Kardex",
+          action: () => navigate("/kardex"),
+          isActive: isRouteActive("/kardex"),
+        },
+        {
+          id: "complaints",
+          label: "Buzón de Quejas",
+          action: () => navigate("/complaints"),
+          isActive: isRouteActive("/complaints"),
+        },
+      ]
     },
     {
-      id: "routes",
-      label: "Configuración de Rondas",
-      action: () => navigate("/routes"),
-      isActive: isRouteActive("/routes"),
-      icon: <FaRoute  />,
+      id: "vigilancia",
+      label: "Vigilancia",
+      icon: <FaShieldAlt />,
+      isActive: isRouteActive("/routes") || isRouteActive("/rounds") || isRouteActive("/guards") || isRouteActive("/schedules"),
+      subitems: [
+        {
+          id: "rounds",
+          label: "Historial de Rondas",
+          action: () => navigate("/rounds"),
+          isActive: isRouteActive("/rounds"),
+        },
+        {
+          id: "routes",
+          label: "Configuración de Rutas",
+          action: () => navigate("/routes"),
+          isActive: isRouteActive("/routes"),
+        },
+        {
+          id: "guards",
+          label: "Guardias",
+          action: () => navigate("/guards"),
+          isActive: isRouteActive("/guards"),
+        },
+        {
+          id: "schedules",
+          label: "Horarios",
+          action: () => navigate("/schedules"),
+          isActive: isRouteActive("/schedules"),
+        },
+      ]
     },
     {
-      id: "incidents",
-      label: "Incidencias",
-      action: () => navigate("/incidents"),
-      isActive: isRouteActive("/incidents"),
-      icon: <FaExclamationTriangle  />, 
+      id: "finanzas",
+      label: "Finanzas",
+      icon: <FaMoneyBill />,
+      isActive: isRouteActive("/payments") || isRouteActive("/fees"),
+      subitems: [
+        {
+          id: "payments",
+          label: "Control de Pagos",
+          action: () => navigate("/payments"),
+          isActive: isRouteActive("/payments"),
+        },
+        {
+          id: "fees",
+          label: "Cuotas y Planes",
+          action: () => navigate("/fees"),
+          isActive: isRouteActive("/fees"),
+        },
+      ]
     },
-    {
-      id: "maintenances",
-      label: "Mantenimientos",
-      action: () => navigate("/maintenances"),
-      isActive: isRouteActive("/maintenances"),
-      icon: <FaWrench  />, 
-    },
-    {
-      id: "kardex",
-      label: "Kardex",
-      action: () => navigate("/kardex"),
-      isActive: isRouteActive("/kardex"),
-      icon: <FaBook  />,
-    },
-    {
-      id: "rounds",
-      label: "Historial de recorridos",
-      action: () => navigate("/rounds"),
-      isActive: isRouteActive("/rounds"),
-      icon: <FaClock  />,
-    },
-    {
-      id: "guards",
-      label: "Guardias",
-      action: () => navigate("/guards"),
-      isActive: isRouteActive("/guards"),
-      icon: <FaUserShield />,
-    },
-    {
-      id: 'schedule',
-      label: 'Horarios',
-       action: () => navigate("/schedules"),
-      isActive: isRouteActive("/schedules"),
-      icon: <FaListAlt  />,
-    },
-    {
-      id: 'reports',
-      label: 'Reportes',
-       action: () => navigate("/reports"),
-      isActive: isRouteActive("/reports"),
-      icon: <FaChartBar  />,
-    }
   ];
 
   if (user?.role === "RESDN") {
-    return baseItems.filter(item => 
-      item.id === "home" || 
-      item.id === "rounds" || 
-      item.id === "incidents" || 
-      item.id === "maintenances" || 
-      item.id === "guards"
-    );
+    return [
+      {
+        id: "home",
+        label: "Inicio",
+        action: () => navigate("/home"),
+        isActive: isRouteActive("/home"),
+        icon: <FaHome />,
+      },
+      {
+        id: "accesses",
+        label: "Control de Accesos",
+        action: () => navigate("/accesses"),
+        isActive: isRouteActive("/accesses"),
+        icon: <FaShieldAlt />,
+      },
+      {
+        id: "complaints",
+        label: "Buzón de Quejas",
+        action: () => navigate("/complaints"),
+        isActive: isRouteActive("/complaints"),
+        icon: <FaExclamationTriangle />,
+      },
+      {
+        id: "contacts",
+        label: "Mis Contactos",
+        action: () => navigate("/contacts"),
+        isActive: isRouteActive("/contacts"),
+        icon: <FaUsers />,
+      },
+      {
+        id: "finanzas",
+        label: "Estado de Cuenta",
+        action: () => navigate("/payments"),
+        isActive: isRouteActive("/payments"),
+        icon: <FaMoneyBill />,
+      },
+    ];
   }
 
   if (user?.role === "ADMIN" || user?.role === "LIDER") {
     baseItems.push({
-      id: "users",
-      label: "Usuarios",
-      action: () => navigate("/users"),
-      isActive: isRouteActive("/users"),
-      icon: <FaChild  />,
-    });
-    baseItems.push({
-      id: "settings",
-      label: "Catálogos",
-      action: () => navigate("/settings"),
-      isActive: isRouteActive("/settings"),
+      id: "sistema",
+      label: "Sistema",
       icon: <FaCogs />,
+      isActive: isRouteActive("/users") || isRouteActive("/settings") || isRouteActive("/reports"),
+      subitems: [
+        {
+          id: "reports",
+          label: "Reportes",
+          action: () => navigate("/reports"),
+          isActive: isRouteActive("/reports"),
+        },
+        {
+          id: "users",
+          label: "Usuarios",
+          action: () => navigate("/users"),
+          isActive: isRouteActive("/users"),
+        },
+        {
+          id: "settings",
+          label: "Catálogos",
+          action: () => navigate("/settings"),
+          isActive: isRouteActive("/settings"),
+        },
+      ]
     });
   }
 

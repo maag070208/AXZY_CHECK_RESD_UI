@@ -17,7 +17,6 @@ import {
   FaLayerGroup,
   FaMapMarkerAlt,
   FaSync,
-  FaUserShield,
 } from "react-icons/fa";
 import {
   getAllAssignmentsByGuard,
@@ -26,7 +25,7 @@ import {
 import { Assignment, AssignmentStatus } from "../types/guards.types";
 import dayjs from "dayjs";
 import { ITMediaGrid } from "@app/core/components/ITMediaGrid";
-import { User } from "../../users/services/UserService";
+import { UserResponse } from "../../users/services/UserService";
 
 // Fallback for API Base URL if constant is missing
 const API_BASE_URL = "http://localhost:4444";
@@ -49,8 +48,7 @@ interface Props {
   onClose: () => void;
   guardId: string | number;
   guardName: string;
-  guard: User;
-  onReassignClient: () => void;
+  guard: UserResponse | null;
   onReassignSchedule: () => void;
   isClient?: boolean;
 }
@@ -72,7 +70,6 @@ export const ViewAssignmentsModal = ({
   guardId,
   guardName,
   guard,
-  onReassignClient,
   onReassignSchedule,
   isClient,
 }: Props) => {
@@ -149,10 +146,6 @@ export const ViewAssignmentsModal = ({
                   {guardName}
                 </h3>
                 <div className="flex flex-wrap items-center gap-3">
-                  <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100 text-[10px] font-black uppercase tracking-widest">
-                    <FaUserShield size={10} />
-                    {guard?.client?.name || "Sin Cliente"}
-                  </div>
                   <div className="flex items-center gap-2 px-3 py-1 bg-indigo-50 text-indigo-700 rounded-xl border border-indigo-100 text-[10px] font-black uppercase tracking-widest">
                     <FaClock size={10} />
                     {guard?.schedule?.name || "Sin Turno"}
@@ -171,15 +164,6 @@ export const ViewAssignmentsModal = ({
                   >
                     <div className="flex items-center gap-2 font-black text-[10px] uppercase tracking-widest">
                       <FaClock /> Turno
-                    </div>
-                  </ITButton>
-                  <ITButton
-                    onClick={onReassignClient}
-                    variant="outline"
-                    className="!rounded-xl !h-11 !px-5 !border-slate-100 !bg-white !text-indigo-500 hover:!bg-indigo-50"
-                  >
-                    <div className="flex items-center gap-2 font-black text-[10px] uppercase tracking-widest">
-                      <FaUserShield /> Cliente
                     </div>
                   </ITButton>
                   <div className="w-px h-8 bg-slate-100 mx-1" />

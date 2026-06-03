@@ -2,7 +2,6 @@ import { render, screen, fireEvent, waitFor, store } from "@app/core/utils/test-
 import HomePage from "./HomePage";
 import { vi } from "vitest";
 import { setAuth, logout } from "@app/core/store/auth/auth.slice";
-import React from "react";
 import "@testing-library/jest-dom";
 
 // Mock useNavigate
@@ -48,9 +47,9 @@ describe("HomePage (Pruebas del Panel de Control)", () => {
 
     render(<HomePage />);
 
-    // Admin should see Clients, Locations, Rounds, etc.
+    // Admin should see Residentes, Locations, Rounds, etc.
     await waitFor(() => {
-      expect(screen.getByText(/^Clientes$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Residentes$/i)).toBeInTheDocument();
       expect(screen.getByText(/^Ubicaciones$/i)).toBeInTheDocument();
       expect(screen.getByText(/^Recorridos$/i)).toBeInTheDocument();
       expect(screen.getByText(/^Configuración de rondas$/i)).toBeInTheDocument();
@@ -69,8 +68,8 @@ describe("HomePage (Pruebas del Panel de Control)", () => {
       expect(screen.getByText(/^Ubicaciones$/i)).toBeInTheDocument();
       expect(screen.getByText(/^Recorridos$/i)).toBeInTheDocument();
       
-      // Shift Guard should NOT see Clients or Users
-      expect(screen.queryByText(/^Clientes$/i)).not.toBeInTheDocument();
+      // Shift Guard should NOT see Residentes or Users
+      expect(screen.queryByText(/^Residentes$/i)).not.toBeInTheDocument();
       expect(screen.queryByText(/^Usuarios$/i)).not.toBeInTheDocument();
     });
   });

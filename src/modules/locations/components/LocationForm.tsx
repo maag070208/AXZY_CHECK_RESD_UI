@@ -1,14 +1,12 @@
-import { useCatalog } from "@app/core/hooks/catalog.hook";
 import {
   ITButton,
   ITInput,
-  ITSearchSelect,
   ITSelect,
 } from "@axzydev/axzy_ui_system";
 import { useFormik } from "formik";
 import { useEffect, useState } from "react";
 import * as Yup from "yup";
-import { getZonesByClient, Zone } from "../../zones/services/ZonesService";
+import { getZones, Zone } from "../../zones/services/ZonesService";
 
 interface Props {
   onSubmit: (data: any, keepOpen?: boolean) => void;
@@ -17,20 +15,17 @@ interface Props {
 }
 
 export const LocationForm = ({ onSubmit, onCancel, initialData }: Props) => {
-  const { data: clients, loading: loadingClients } = useCatalog("client");
   const [zones, setZones] = useState<Zone[]>([]);
   const [loadingZones, setLoadingZones] = useState(false);
   const [isSavingAndNew, setIsSavingAndNew] = useState(false);
 
   const formik = useFormik({
     initialValues: {
-      clientId: initialData?.clientId || "",
       zoneId: initialData?.zoneId || "",
       name: initialData?.name || "",
       reference: initialData?.reference || "",
     },
     validationSchema: Yup.object({
-      clientId: Yup.string().required("El cliente es requerido"),
       zoneId: Yup.string().required("El recurrente es requerido"),
       name: Yup.string().required("El nombre de ubicación es requerido"),
       reference: Yup.string().optional(),
@@ -39,14 +34,10 @@ export const LocationForm = ({ onSubmit, onCancel, initialData }: Props) => {
       const selectedZone = zones.find(
         (z) => String(z.id) === String(values.zoneId),
       );
-      const selectedClient = clients?.find(
-        (c: any) => String(c.id) === String(values.clientId),
-      );
 
-      const clientName = selectedClient?.name || "S/C";
       const zoneName = selectedZone?.name || "S/Z";
 
-      const prefix = `${clientName}-${zoneName}-`;
+      const prefix = `${zoneName}-`;
       let finalName = values.name;
 
       if (!finalName.startsWith(prefix)) {
@@ -57,7 +48,6 @@ export const LocationForm = ({ onSubmit, onCancel, initialData }: Props) => {
         {
           ...values,
           name: finalName,
-          clientId: values.clientId,
           zoneId: values.zoneId,
           zoneName: zoneName,
         },
@@ -77,24 +67,21 @@ export const LocationForm = ({ onSubmit, onCancel, initialData }: Props) => {
   });
 
   useEffect(() => {
-    if (initialData?.clientId) {
-      formik.setFieldValue("clientId", initialData.clientId);
-    }
     if (initialData?.zoneId) {
       formik.setFieldValue("zoneId", initialData.zoneId);
     }
-  }, [initialData?.clientId, initialData?.zoneId]);
+  }, [initialData?.zoneId]);
 
   useEffect(() => {
-    if (formik.values.clientId) {
-      setLoadingZones(true);
-      getZonesByClient(String(formik.values.clientId))
-        .then((data) => setZones(data))
-        .finally(() => setLoadingZones(false));
-    } else {
-      setZones([]);
-    }
-  }, [formik.values.clientId]);
+    setLoadingZones(true);
+    getZones()
+      .then((res) => {
+        if (res.success) {
+          setZones(res.data || []);
+        }
+      })
+      .finally(() => setLoadingZones(false));
+  }, []);
 
   return (
     <div className="flex flex-col bg-white overflow-hidden">
@@ -110,24 +97,6 @@ export const LocationForm = ({ onSubmit, onCancel, initialData }: Props) => {
 
             <div className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <ITSearchSelect
-                  key={`${formik.values.clientId}-${clients.length}`}
-                  label="Cliente Responsable"
-                  placeholder={
-                    loadingClients
-                      ? "Cargando clientes..."
-                      : "Seleccionar cliente..."
-                  }
-                  options={(clients || []).map((c: any) => ({
-                    label: c.name || c.label,
-                    value: c.id,
-                  }))}
-                  value={formik.values.clientId}
-                  onChange={(val) => formik.setFieldValue("clientId", val)}
-                  error={formik.errors.clientId as string}
-                  touched={!!formik.touched.clientId}
-                />
-
                 <ITSelect
                   label="Recurrente (Zona)"
                   name="zoneId"
@@ -140,19 +109,30 @@ export const LocationForm = ({ onSubmit, onCancel, initialData }: Props) => {
                     loadingZones ? "Cargando..." : "Seleccionar zona"
                   }
                   options={zones.map((z) => ({ label: z.name, value: z.id }))}
-                  disabled={loadingZones || !formik.values.clientId}
+                  disabled={loadingZones}
+                />
+
+                <ITInput
+                  label="Nombre de la Ubicación"
+                  name="name"
+                  value={formik.values.name}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  error={formik.errors.name as string}
+                  touched={!!formik.touched.name}
+                  placeholder="Ej: Recepción, Oficina 101"
                 />
               </div>
 
               <ITInput
-                label="Nombre de la Ubicación"
-                name="name"
-                value={formik.values.name}
+                label="Referencia / Detalles"
+                name="reference"
+                value={formik.values.reference}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
-                error={formik.errors.name as string}
-                touched={!!formik.touched.name}
-                placeholder="Ej: Recepción, Oficina 101"
+                error={formik.errors.reference as string}
+                touched={!!formik.touched.reference}
+                placeholder="Ej: Cerca de puerta principal"
               />
             </div>
           </section>

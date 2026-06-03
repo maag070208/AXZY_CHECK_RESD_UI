@@ -24,9 +24,6 @@ export interface Maintenance {
     lastName: string;
     username: string;
   };
-  client?: {
-    name: string;
-  };
 }
 
 export interface CreateMaintenanceDto {

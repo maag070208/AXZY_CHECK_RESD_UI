@@ -4,7 +4,6 @@ import { TResult } from "@app/core/types/TResult";
 export interface IRound {
   id: string;
   guardId: string;
-  clientId?: string;
   startTime: string;
   endTime?: string | null;
   status: "IN_PROGRESS" | "COMPLETED";
@@ -14,10 +13,6 @@ export interface IRound {
       title: string;
       startTime?: string;
       endTime?: string;
-      client?: {
-          id: string;
-          name: string;
-      };
       recurringLocations?: Array<{
          id: string;
          locationId: string;
@@ -31,11 +26,6 @@ export interface IRound {
     id: string;
     name: string;
     lastName: string | null;
-  };
-  client?: {
-      id: string;
-      name: string;
-      locations?: any[];
   };
 }
 

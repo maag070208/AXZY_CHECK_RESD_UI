@@ -8,6 +8,7 @@ import {
   ITDataTable,
   ITDialog,
   ITLoader,
+  ITText,
   ITTripleFilter,
 } from "@axzydev/axzy_ui_system";
 import dayjs from "dayjs";
@@ -122,9 +123,6 @@ const IncidentsPage = () => {
                   variant="outlined"
                   className="!text-[8px] !px-1.5 !py-0.5 !h-auto"
                 />
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">
-                  • {row.client?.name}
-                </span>
               </div>
             </div>
           </div>
@@ -206,7 +204,7 @@ const IncidentsPage = () => {
             {isAdmin && (
               <ITButton
                 onClick={() => setIncidentToDelete(row)}
-                color="error"
+                color="danger"
                 variant="outlined"
                 size="small"
                 title="Eliminar"
@@ -223,7 +221,7 @@ const IncidentsPage = () => {
   );
 
   return (
-    <div className="p-6   min-h-screen font-sans">
+    <div className="p-6 min-h-screen font-sans">
       <ModuleHeader
         title="Gestión de Incidencias"
         subtitle="Monitoreo y respuesta inmediata a reportes de seguridad"
@@ -248,7 +246,7 @@ const IncidentsPage = () => {
         }
       />
 
-      <div className="bg-white rounded-[24px] shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <ITDataTable<Incident & Record<string, unknown>>
           key={`${refreshKey}-${guardsCatalog?.length || 0}`}
           fetchData={memoizedFetch as any}
@@ -312,20 +310,20 @@ const IncidentsPage = () => {
         onClose={() => setIncidentToDelete(null)}
         title="Eliminar Incidencia"
       >
-        <div className="p-8 text-center">
-          <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6 border border-rose-100 shadow-sm">
-            <FaTrash size={24} />
+        <div className="p-10 text-center">
+          <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-rose-100 shadow-sm">
+            <FaTrash size={32} />
           </div>
-          <h4 className="text-xl font-black text-slate-800 uppercase tracking-tight mb-2">
+          <ITText className="text-xl font-black text-slate-800 uppercase tracking-tight mb-3">
             ¿Eliminar Reporte?
-          </h4>
-          <p className="text-slate-500 text-xs font-medium mb-8 uppercase tracking-tight">
-            Esta acción es irreversible. Se perderá toda la evidencia.
-          </p>
-          <div className="flex justify-center gap-3">
+          </ITText>
+          <ITText className="text-slate-500 text-[11px] font-bold uppercase tracking-widest leading-relaxed mb-10 max-w-xs mx-auto block">
+            Esta acción es irreversible. Se perderá toda la evidencia asociada.
+          </ITText>
+          <div className="flex gap-4 justify-center">
             <ITButton
               variant="ghost"
-              className="px-8 !text-slate-400 font-black text-[10px] uppercase tracking-widest"
+              className="px-8 font-black text-[11px] uppercase tracking-widest text-slate-400"
               onClick={() => setIncidentToDelete(null)}
             >
               Cancelar
@@ -333,12 +331,10 @@ const IncidentsPage = () => {
             <ITButton
               variant="filled"
               color="danger"
-              className="px-10"
+              className="px-10 !rounded-2xl shadow-xl shadow-rose-200"
               onClick={confirmDelete}
             >
-              <div className="font-black text-[10px] uppercase tracking-widest">
-                Eliminar
-              </div>
+              ELIMINAR AHORA
             </ITButton>
           </div>
         </div>

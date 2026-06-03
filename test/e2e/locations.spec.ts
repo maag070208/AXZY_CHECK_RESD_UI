@@ -35,7 +35,33 @@ test.describe("Módulo de Ubicaciones - Gestión de Ubicaciones", () => {
   const mockZones = [
     { id: "zone-1", clientId: "client-1", name: "ALTA", active: true },
     { id: "zone-2", clientId: "client-1", name: "BAJA", active: true },
+    { id: "zone-e2e", clientId: null, name: "ZONA E2E TEST", active: true },
   ];
+
+  test.beforeAll(async () => {
+    // In real API mode, ensure a zone exists for the location form
+    if (process.env.USE_REAL_API) {
+      const token = await fetch("http://localhost:4444/api/v1/users/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: "admin", password: "123456" }),
+      }).then((r) => r.json()).then((d) => d.data);
+      // Check if test zone already exists
+      const zones = await fetch("http://localhost:4444/api/v1/zones/datatable", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ page: 1, limit: 100 }),
+      }).then((r) => r.json());
+      const hasTestZone = zones.data?.rows?.some((z: any) => z.name === "ZONA E2E TEST");
+      if (!hasTestZone) {
+        await fetch("http://localhost:4444/api/v1/zones", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ name: "ZONA E2E TEST" }),
+        });
+      }
+    }
+  });
 
   test.beforeEach(async ({ page }) => {
     const useRealApi = !!process.env.USE_REAL_API;
@@ -75,58 +101,17 @@ test.describe("Módulo de Ubicaciones - Gestión de Ubicaciones", () => {
         }
       });
 
-      // Mock Catalog Clients
-      await page.route("**/catalog/client", async (route) => {
+      // Mock Zones datatable (the form fetches all zones via /zones/datatable)
+      await page.route(/\/api\/v\d+\/zones\/datatable/, async (route) => {
         const method = route.request().method();
         if (method === "OPTIONS") {
-          await route.fulfill({
-            status: 200,
-            headers: {
-              "Access-Control-Allow-Origin": "*",
-              "Access-Control-Allow-Methods": "GET, OPTIONS",
-              "Access-Control-Allow-Headers": "*",
-            },
-          });
+          await route.fulfill({ status: 200, headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Allow-Headers": "*" } });
         } else {
           await route.fulfill({
             status: 200,
             contentType: "application/json",
-            headers: {
-              "Access-Control-Allow-Origin": "*",
-            },
-            body: JSON.stringify({
-              success: true,
-              data: mockClients,
-              messages: [],
-            }),
-          });
-        }
-      });
-
-      // Mock Zones by Client
-      await page.route(/\/api\/v\d+\/zones\/client\/.*/, async (route) => {
-        const method = route.request().method();
-        if (method === "OPTIONS") {
-          await route.fulfill({
-            status: 200,
-            headers: {
-              "Access-Control-Allow-Origin": "*",
-              "Access-Control-Allow-Methods": "GET, OPTIONS",
-              "Access-Control-Allow-Headers": "*",
-            },
-          });
-        } else {
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            headers: {
-              "Access-Control-Allow-Origin": "*",
-            },
-            body: JSON.stringify({
-              success: true,
-              data: mockZones,
-              messages: [],
-            }),
+            headers: { "Access-Control-Allow-Origin": "*" },
+            body: JSON.stringify({ success: true, data: { rows: mockZones, total: mockZones.length, page: 1, limit: 100 }, messages: [] }),
           });
         }
       });
@@ -295,15 +280,11 @@ test.describe("Módulo de Ubicaciones - Gestión de Ubicaciones", () => {
 
   const uniqueLocId = Date.now().toString().slice(-6);
   const uniqueLocNameInput = `OFICINA E2E ${uniqueLocId}`;
-  // Mock uses compound "Client-Zone-Name" format; real API stores raw name only
-  const uniqueLocNameExpected = process.env.USE_REAL_API
-    ? uniqueLocNameInput
-    : `Plaza 2000-ALTA-OFICINA E2E ${uniqueLocId}`;
-  // Modified name input: in real API just the raw name (no prefix)
+  const testZoneName = "ZONA E2E TEST";
+  // Form auto-prepends zone name: {zoneName}-{name}
+  const uniqueLocNameExpected = `${testZoneName}-${uniqueLocNameInput}`;
   const modifiedLocRawName = `OFICINA E2E ${uniqueLocId} MODIFICADA`;
-  const modifiedLocNameInput = process.env.USE_REAL_API
-    ? modifiedLocRawName
-    : `Plaza 2000-ALTA-OFICINA E2E ${uniqueLocId} MODIFICADA`;
+  const modifiedLocNameInput = `${testZoneName}-${modifiedLocRawName}`;
 
   test("debería permitir agregar una nueva ubicación exitosamente", async ({ page }) => {
     // 1. Verificar título
@@ -315,37 +296,33 @@ test.describe("Módulo de Ubicaciones - Gestión de Ubicaciones", () => {
     // 3. Verificar modal abierto
     await expect(page.getByRole("heading", { name: "Registro de Ubicación", exact: true })).toBeVisible();
 
-    // 4. Seleccionar Cliente
-    await page.click('input[placeholder="Seleccionar cliente..."]');
-    await page.fill('input[placeholder="Seleccionar cliente..."]', "Plaza 2000");
-    await page.locator('.absolute.z-50').locator('div.cursor-pointer', { hasText: 'Plaza 2000' }).first().click();
+    // 4. Seleccionar Zona
+    await expect(page.locator('select[name="zoneId"]')).toBeEnabled({ timeout: 8000 });
+    await page.selectOption('select[name="zoneId"]', { label: testZoneName });
 
-    // 5. Seleccionar Zona
-    await expect(page.locator('select[name="zoneId"]')).toBeEnabled();
-    await page.selectOption('select[name="zoneId"]', { label: "ALTA" });
-
-    // 6. Llenar nombre de la ubicación
+    // 5. Llenar nombre de la ubicación
     await page.fill('input[name="name"]', uniqueLocNameInput);
 
-    // 7. Enviar
+    // 6. Enviar
     await page.click('button:has-text("Registrar Punto")');
 
-    // 8. Verificar toast
+    // 7. Verificar toast
     await expect(page.getByText("Ubicación creada con éxito")).toBeVisible();
 
-    // 9. Verificar que aparezca en la tabla
-    await expect(page.getByText(uniqueLocNameExpected)).toBeVisible();
+    // 8. Verificar que aparezca en la tabla (form saves with zone prefix)
+    await expect(page.getByText(uniqueLocNameExpected).first()).toBeVisible();
   });
 
   test("debería permitir editar la ubicación recién creada", async ({ page }) => {
     // 1. Ubicar fila y click en editar
-    const row = page.locator("tr", { hasText: uniqueLocNameExpected });
+    const row = page.locator("tr", { hasText: uniqueLocNameInput });
     await row.getByRole("button", { name: "Editar" }).click();
 
     // 2. Verificar modal abierto
     await expect(page.getByRole("heading", { name: "Actualizar Ubicación", exact: true })).toBeVisible();
 
-    // 3. Modificar nombre (use raw name; real API stores it directly)
+    // 3. Wait for zone select to be ready, then modify name
+    await expect(page.locator('select[name="zoneId"]')).toBeEnabled({ timeout: 8000 });
     await page.fill('input[name="name"]', modifiedLocRawName);
 
     // 4. Registrar Punto (guardar cambios)
@@ -355,11 +332,11 @@ test.describe("Módulo de Ubicaciones - Gestión de Ubicaciones", () => {
     await expect(page.getByText("Ubicación actualizada")).toBeVisible();
 
     // 6. Verificar cambio en la tabla
-    await expect(page.getByText(modifiedLocNameInput)).toBeVisible();
+    await expect(page.getByText(modifiedLocNameInput).first()).toBeVisible();
   });
 
   test("debería permitir buscar y filtrar la ubicación", async ({ page }) => {
-    const otherRow = page.locator("tr").filter({ hasNotText: modifiedLocRawName }).filter({ hasText: /CLIENTE:/i }).first();
+    const otherRow = page.locator("tr").filter({ hasNotText: modifiedLocRawName }).filter({ hasText: /OFICINA E2E/i }).first();
 
     // 1. Buscar por el nombre modificado (incluye ID único para evitar falsos positivos)
     await page.fill('input[placeholder="BUSCAR UBICACIÓN..."]', modifiedLocRawName);
@@ -381,7 +358,7 @@ test.describe("Módulo de Ubicaciones - Gestión de Ubicaciones", () => {
     await row.getByRole("button", { name: "Eliminar" }).click();
 
     // 2. Verificar modal confirmación
-    await expect(page.getByRole("heading", { name: "Confirmar Eliminación", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Eliminar Ubicación", exact: true })).toBeVisible();
 
     // 3. Confirmar
     await page.click('button:has-text("Sí, Eliminar")');

@@ -247,7 +247,7 @@ const SchedulesPage = () => {
             <ITButton
               onClick={() => setScheduleToDeleteId(row.id)}
               variant="outlined"
-              color="error"
+              color="danger"
               size="small"
               title="Eliminar"
             >
@@ -261,7 +261,7 @@ const SchedulesPage = () => {
   );
 
   return (
-    <div className="p-6   min-h-screen font-sans">
+    <div className="p-6 min-h-screen font-sans">
       <ModuleHeader
         title="Directorio de Horarios"
         subtitle="Gestión de turnos operativos y controles de asistencia"
@@ -288,7 +288,7 @@ const SchedulesPage = () => {
         }
       />
 
-      <div className="bg-white rounded-[24px] shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <ITDataTable
           key={refreshKey}
           fetchData={memoizedFetch as any}
@@ -304,7 +304,7 @@ const SchedulesPage = () => {
         isOpen={isModalOpen}
         onClose={closeModal}
         title="Gestión de Horarios"
-        className="!max-w-xl !w-full"
+        className="!max-w-2xl !w-full"
       >
         <div className="flex flex-col bg-white overflow-hidden">
           <div className="p-10 space-y-10">

@@ -14,10 +14,10 @@ import { FaShieldAlt } from "react-icons/fa";
 import { useDispatch } from "react-redux";
 import * as Yup from "yup";
 import { getSchedules, Schedule } from "../../schedules/SchedulesService";
-import { createUser, updateUser, User } from "../services/UserService";
+import { createUser, updateUser, UserResponse } from "../services/UserService";
 
 interface Props {
-  userToEdit?: User;
+  userToEdit?: UserResponse;
   onCancel: () => void;
   onSuccess: () => void;
 }
@@ -32,7 +32,6 @@ export const CreateUserWizard: React.FC<Props> = ({
   const [schedules, setSchedules] = useState<Schedule[]>([]);
 
   const { data: roles, loading: loadingRoles } = useCatalog("role");
-  const { data: clients, loading: loadingClients } = useCatalog("client");
   const [loadingSchedules, setLoadingSchedules] = useState(true);
 
   useEffect(() => {
@@ -68,11 +67,6 @@ export const CreateUserWizard: React.FC<Props> = ({
               : userToEdit?.schedule?.id
                       ? String(userToEdit.schedule.id)
                       : "",
-      clientId: userToEdit?.clientId
-              ? String(userToEdit.clientId)
-              : userToEdit?.client?.id
-                      ? String(userToEdit.client.id)
-                      : "",
       active: userToEdit ? userToEdit.active : true,
     },
     validationSchema: Yup.object({
@@ -96,13 +90,6 @@ export const CreateUserWizard: React.FC<Props> = ({
         },
         then: () => Yup.string().required("Horario obligatorio"),
       }),
-      clientId: Yup.string().when("roleId", {
-        is: (roleId: string) => {
-          const role = roles.find((r) => String(r.id) === String(roleId));
-          return ["GUARD", "SHIFT", "MAINT"].includes(role?.name || "");
-        },
-        then: () => Yup.string().required("Cliente obligatorio"),
-      }),
     }),
     onSubmit: async (values) => {
       dispatch(showLoader());
@@ -112,7 +99,6 @@ export const CreateUserWizard: React.FC<Props> = ({
           ...data,
           password: data.password || undefined,
           scheduleId: data.scheduleId || undefined,
-          clientId: data.clientId || undefined,
         };
         const res =
                 isEditing && userToEdit
@@ -284,23 +270,6 @@ export const CreateUserWizard: React.FC<Props> = ({
                     loadingSchedules
                       ? "Cargando horarios..."
                       : "Seleccionar horario..."
-                  }
-                />
-                <ITSelect
-                  label="Cliente Asignado"
-                  name="clientId"
-                  value={formik.values.clientId}
-                  onChange={formik.handleChange}
-                  options={clients.map((c) => ({
-                    label: c.name,
-                    value: String(c.id),
-                  }))}
-                  error={formik.errors.clientId}
-                  touched={formik.touched.clientId}
-                  placeholder={
-                    loadingClients
-                      ? "Cargando clientes..."
-                      : "Seleccionar cliente..."
                   }
                 />
               </div>

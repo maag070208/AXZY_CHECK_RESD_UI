@@ -1,10 +1,8 @@
-import { useCatalog } from "@app/core/hooks/catalog.hook";
 import { showToast } from "@app/core/store/toast/toast.slice";
 import {
   ITButton,
   ITDialog,
   ITInput,
-  ITSearchSelect,
 } from "@axzydev/axzy_ui_system";
 import { useCallback, useEffect, useState } from "react";
 import { FaMapMarkerAlt, FaPlus, FaSearch, FaTimes } from "react-icons/fa";
@@ -16,18 +14,15 @@ interface BulkPrintModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (ids: string[]) => void;
-  initialClientId?: string;
 }
 
 export const BulkPrintModal = ({
   isOpen,
   onClose,
   onConfirm,
-  initialClientId,
 }: BulkPrintModalProps) => {
   const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState<"SEARCH" | "SELECTED">("SEARCH");
-  const [clientId, setClientId] = useState(initialClientId || "");
   const [bulkFilterZone, setBulkFilterZone] = useState<string>("");
   const [bulkFilterSearch, setBulkFilterSearch] = useState<string>("");
   const [allZones, setAllZones] = useState<Zone[]>([]);
@@ -35,8 +30,6 @@ export const BulkPrintModal = ({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedLocations, setSelectedLocations] = useState<Location[]>([]);
   const [animateBadge, setAnimateBadge] = useState(false);
-
-  const { data: clients } = useCatalog("client");
 
   useEffect(() => {
     if (selectedIds.length > 0) {
@@ -53,13 +46,12 @@ export const BulkPrintModal = ({
       filters: {
         name: bulkFilterSearch || undefined,
         zoneId: bulkFilterZone || undefined,
-        clientId: clientId || undefined,
       },
     });
     if (res.data) {
       setLocationsToChoose(res.data);
     }
-  }, [bulkFilterSearch, bulkFilterZone, clientId]);
+  }, [bulkFilterSearch, bulkFilterZone]);
 
   useEffect(() => {
     if (isOpen) {
@@ -95,7 +87,7 @@ export const BulkPrintModal = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Impresión Masiva de QRs"
-      className="!max-w-5xl !w-full"
+      className="!max-w-4xl !w-full"
     >
       <div className="flex flex-col bg-white overflow-hidden max-h-[85vh]">
         {/* Tab Navigation */}
@@ -134,20 +126,7 @@ export const BulkPrintModal = ({
         {/* Filters Section (Only in SEARCH tab) */}
         {activeTab === "SEARCH" && (
           <div className="flex-none p-10 bg-slate-50/30 border-b border-slate-100">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <ITSearchSelect
-                label="Cliente"
-                placeholder="Seleccionar cliente..."
-                options={(clients || []).map((c: any) => ({
-                  label: c.name,
-                  value: c.id,
-                }))}
-                value={clientId}
-                onChange={(val) => {
-                  setClientId(val as string);
-                  setBulkFilterZone("");
-                }}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="flex flex-col gap-2">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                   Zona / Recurrente
@@ -156,16 +135,13 @@ export const BulkPrintModal = ({
                   value={bulkFilterZone}
                   onChange={(e) => setBulkFilterZone(e.target.value)}
                   className="w-full h-[48px] px-5 rounded-2xl border border-slate-200 bg-white text-xs font-bold text-slate-700 outline-none transition-all focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 disabled:bg-slate-50 disabled:cursor-not-allowed"
-                  disabled={!clientId}
                 >
                   <option value="">Todas las zonas</option>
-                  {allZones
-                    .filter((z) => !clientId || z.clientId === clientId)
-                    .map((z) => (
-                      <option key={z.id} value={z.id}>
-                        {z.name}
-                      </option>
-                    ))}
+                  {allZones.map((z) => (
+                    <option key={z.id} value={z.id}>
+                      {z.name}
+                    </option>
+                  ))}
                 </select>
               </div>
               <ITInput

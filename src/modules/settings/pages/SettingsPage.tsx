@@ -8,7 +8,8 @@ import {
   ITDialog,
   ITInput,
   ITTabs,
-  ITTabItem
+  ITTabItem,
+  ITText,
 } from "@axzydev/axzy_ui_system";
 import { useCallback, useEffect, useState } from "react";
 import { CirclePicker } from "react-color";
@@ -103,6 +104,12 @@ const SettingsPage = () => {
     value: "",
   });
   const [configForm, setConfigForm] = useState<any>({ key: "", value: "" });
+  
+  // Delete confirm state
+  const [deleteTarget, setDeleteTarget] = useState<{
+    type: "category" | "type" | "config" | "subtype";
+    id: any;
+  } | null>(null);
 
   // Open Modal Handlers
   const openCategoryModal = (cat: any = null) => {
@@ -184,16 +191,23 @@ const SettingsPage = () => {
     }
   };
 
-  const handleDeleteSubtype = async (id: number) => {
-    if (!confirm("¿Eliminar este sub-tipo?")) return;
+  const [subtypeToDelete, setSubtypeToDelete] = useState<number | null>(null);
+
+  const handleDeleteSubtype = (id: number) => {
+    setSubtypeToDelete(id);
+  };
+
+  const confirmDeleteSubtype = async () => {
+    if (subtypeToDelete === null) return;
     try {
-      await SettingsService.deleteIncidentType(id);
+      await SettingsService.deleteIncidentType(subtypeToDelete);
       dispatch(showToast({ message: "Sub-tipo eliminado", type: "success" }));
       fetchCategorySubtypes();
       refresh();
     } catch (err) {
       dispatch(showToast({ message: "Error al eliminar", type: "error" }));
     }
+    setSubtypeToDelete(null);
   };
 
   // CATEGORIES
@@ -367,13 +381,8 @@ const SettingsPage = () => {
                     <ITButton
                       size="small"
                       variant="outlined"
-                      color="error"
-                      onClick={async () => {
-                        if (confirm("¿Eliminar?")) {
-                          await SettingsService.deleteIncidentCategory(row.id);
-                          refresh();
-                        }
-                      }}
+                      color="danger"
+                      onClick={() => setDeleteTarget({ type: "category", id: row.id })}
                       title="Eliminar"
                     >
                       <FaTrash size={14} />
@@ -431,13 +440,8 @@ const SettingsPage = () => {
                     <ITButton
                       size="small"
                       variant="outlined"
-                      color="error"
-                      onClick={async () => {
-                        if (confirm("¿Eliminar?")) {
-                          await SettingsService.deleteIncidentType(row.id);
-                          refresh();
-                        }
-                      }}
+                      color="danger"
+                      onClick={() => setDeleteTarget({ type: "type", id: row.id })}
                       title="Eliminar"
                     >
                       <FaTrash size={14} />
@@ -505,13 +509,8 @@ const SettingsPage = () => {
                     <ITButton
                       size="small"
                       variant="outlined"
-                      color="error"
-                      onClick={async () => {
-                        if (confirm("¿Eliminar?")) {
-                          await SettingsService.deleteSysConfig(row.key);
-                          refresh();
-                        }
-                      }}
+                      color="danger"
+                      onClick={() => setDeleteTarget({ type: "config", id: row.key })}
                       title="Eliminar"
                     >
                       <FaTrash size={14} />
@@ -912,8 +911,162 @@ const SettingsPage = () => {
           </div>
         </form>
       </ITDialog>
+
+      {/* Delete Confirm Dialog - Categories */}
+      <ITDialog
+        isOpen={deleteTarget?.type === "category"}
+        onClose={() => setDeleteTarget(null)}
+      >
+        <div className="p-10 text-center">
+          <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-rose-100 shadow-sm">
+            <FaTrash size={32} />
+          </div>
+          <ITText className="text-xl font-black text-slate-800 uppercase tracking-tight mb-3">
+            ¿Eliminar Categoría?
+          </ITText>
+          <ITText className="text-slate-500 text-[11px] font-bold uppercase tracking-widest leading-relaxed mb-10 max-w-xs mx-auto block">
+            Esta acción es permanente y no se puede deshacer.
+          </ITText>
+          <div className="flex gap-4 justify-center">
+            <ITButton
+              variant="ghost"
+              className="px-8 font-black text-[11px] uppercase tracking-widest text-slate-400"
+              onClick={() => setDeleteTarget(null)}
+            >
+              Cancelar
+            </ITButton>
+            <ITButton
+              variant="filled"
+              color="danger"
+              className="px-10 !rounded-2xl shadow-xl shadow-rose-200"
+              onClick={async () => {
+                if (!deleteTarget) return;
+                await SettingsService.deleteIncidentCategory(deleteTarget.id);
+                refresh();
+                setDeleteTarget(null);
+              }}
+            >
+              ELIMINAR AHORA
+            </ITButton>
+          </div>
+        </div>
+      </ITDialog>
+
+      {/* Delete Confirm Dialog - Types */}
+      <ITDialog
+        isOpen={deleteTarget?.type === "type"}
+        onClose={() => setDeleteTarget(null)}
+      >
+        <div className="p-10 text-center">
+          <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-rose-100 shadow-sm">
+            <FaTrash size={32} />
+          </div>
+          <ITText className="text-xl font-black text-slate-800 uppercase tracking-tight mb-3">
+            ¿Eliminar Tipo de Incidente?
+          </ITText>
+          <ITText className="text-slate-500 text-[11px] font-bold uppercase tracking-widest leading-relaxed mb-10 max-w-xs mx-auto block">
+            Esta acción es permanente y no se puede deshacer.
+          </ITText>
+          <div className="flex gap-4 justify-center">
+            <ITButton
+              variant="ghost"
+              className="px-8 font-black text-[11px] uppercase tracking-widest text-slate-400"
+              onClick={() => setDeleteTarget(null)}
+            >
+              Cancelar
+            </ITButton>
+            <ITButton
+              variant="filled"
+              color="danger"
+              className="px-10 !rounded-2xl shadow-xl shadow-rose-200"
+              onClick={async () => {
+                if (!deleteTarget) return;
+                await SettingsService.deleteIncidentType(deleteTarget.id);
+                refresh();
+                setDeleteTarget(null);
+              }}
+            >
+              ELIMINAR AHORA
+            </ITButton>
+          </div>
+        </div>
+      </ITDialog>
+
+      {/* Delete Confirm Dialog - Config */}
+      <ITDialog
+        isOpen={deleteTarget?.type === "config"}
+        onClose={() => setDeleteTarget(null)}
+      >
+        <div className="p-10 text-center">
+          <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-rose-100 shadow-sm">
+            <FaTrash size={32} />
+          </div>
+          <ITText className="text-xl font-black text-slate-800 uppercase tracking-tight mb-3">
+            ¿Eliminar Configuración?
+          </ITText>
+          <ITText className="text-slate-500 text-[11px] font-bold uppercase tracking-widest leading-relaxed mb-10 max-w-xs mx-auto block">
+            Esta acción es permanente y no se puede deshacer.
+          </ITText>
+          <div className="flex gap-4 justify-center">
+            <ITButton
+              variant="ghost"
+              className="px-8 font-black text-[11px] uppercase tracking-widest text-slate-400"
+              onClick={() => setDeleteTarget(null)}
+            >
+              Cancelar
+            </ITButton>
+            <ITButton
+              variant="filled"
+              color="danger"
+              className="px-10 !rounded-2xl shadow-xl shadow-rose-200"
+              onClick={async () => {
+                if (!deleteTarget) return;
+                await SettingsService.deleteSysConfig(deleteTarget.id);
+                refresh();
+                setDeleteTarget(null);
+              }}
+            >
+              ELIMINAR AHORA
+            </ITButton>
+          </div>
+        </div>
+      </ITDialog>
+
+      {/* Delete Confirm Dialog - Subtypes */}
+      <ITDialog
+        isOpen={subtypeToDelete !== null}
+        onClose={() => setSubtypeToDelete(null)}
+      >
+        <div className="p-10 text-center">
+          <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-rose-100 shadow-sm">
+            <FaTrash size={32} />
+          </div>
+          <ITText className="text-xl font-black text-slate-800 uppercase tracking-tight mb-3">
+            ¿Eliminar Sub-tipo?
+          </ITText>
+          <ITText className="text-slate-500 text-[11px] font-bold uppercase tracking-widest leading-relaxed mb-10 max-w-xs mx-auto block">
+            Esta acción es permanente y no se puede deshacer.
+          </ITText>
+          <div className="flex gap-4 justify-center">
+            <ITButton
+              variant="ghost"
+              className="px-8 font-black text-[11px] uppercase tracking-widest text-slate-400"
+              onClick={() => setSubtypeToDelete(null)}
+            >
+              Cancelar
+            </ITButton>
+            <ITButton
+              variant="filled"
+              color="danger"
+              className="px-10 !rounded-2xl shadow-xl shadow-rose-200"
+              onClick={confirmDeleteSubtype}
+            >
+              ELIMINAR AHORA
+            </ITButton>
+          </div>
+        </div>
+      </ITDialog>
     </div>
   );
 };
-
 export default SettingsPage;

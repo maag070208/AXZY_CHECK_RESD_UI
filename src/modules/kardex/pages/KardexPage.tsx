@@ -159,7 +159,7 @@ const KardexPage = () => {
   );
 
   return (
-    <div className="p-6   min-h-screen font-sans">
+    <div className="p-6 min-h-screen font-sans">
       <ModuleHeader
         title="Expediente Kardex"
         subtitle="Registro histórico de marcajes, evidencias y reportes de campo"
@@ -195,7 +195,7 @@ const KardexPage = () => {
         refreshKey={refreshKey}
       />
 
-      <div className="bg-white rounded-[24px] shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden mt-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mt-6">
         <ITDataTable<KardexEntry & Record<string, unknown>>
           key={refreshKey}
           columns={columns as any}

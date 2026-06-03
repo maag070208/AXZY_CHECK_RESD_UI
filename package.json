@@ -5,8 +5,8 @@
   "version": "1.2.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --port 5002 --strictPort --host 127.0.0.1",
-    "server": "vite preview --port 5002 --strictPort --host 127.0.0.1",
+    "dev": "vite --port 12345 --strictPort",
+    "server": "vite preview --port 12345 --strictPort",
     "start": "yarn run build && yarn run server",
     "build": "tsc -b && vite build --mode development",
     "build:prod": "tsc -b && vite build --mode production",
@@ -43,7 +43,9 @@
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.2.0",
     "tailwindcss": "3",
-    "yup": "^1.6.1"
+    "yup": "^1.6.1",
+    "@stripe/stripe-js": "^3.0.0",
+    "@stripe/react-stripe-js": "^2.5.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",

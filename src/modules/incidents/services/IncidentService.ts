@@ -15,7 +15,6 @@ export interface Incident {
   resolvedAt?: string;
   resolvedById?: string;
   status: "PENDING" | "ATTENDED";
-  clientId: string;
   guard: {
     id: string;
     name: string;
@@ -32,10 +31,6 @@ export interface Incident {
     name: string;
   };
   type: {
-    id: string;
-    name: string;
-  };
-  client: {
     id: string;
     name: string;
   };

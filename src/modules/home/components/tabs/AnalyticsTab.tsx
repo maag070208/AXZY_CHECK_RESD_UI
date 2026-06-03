@@ -213,7 +213,7 @@ export const AnalyticsTab = () => {
 
             {/* General Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatsCard title="Eventos/Incidencias" value={stats?.totalIncidents} icon={<FaExclamationTriangle />} color="indigo" loading={loading} />
+                <StatsCard title="Eventos/Incidencias" value={stats?.totalIncidents} icon={<FaExclamationTriangle />} color="primary" loading={loading} />
                 <StatsCard title="Puntos Escaneados" value={stats?.totalScans} icon={<FaQrcode />} color="emerald" loading={loading} />
                 <StatsCard title="Rondas Incompletas" value={stats?.incompleteRounds} icon={<FaChartLine />} color="orange" loading={loading} />
                 <StatsCard title="Puntos Omitidos" value={stats?.missedScans} icon={<FaTimesCircle />} color="red" loading={loading} />
@@ -254,13 +254,13 @@ export const AnalyticsTab = () => {
 
 const StatsCard = ({ title, value, icon, color, loading }: any) => {
     const colorClasses: Record<string, string> = {
-        indigo: 'bg-indigo-50 text-indigo-600',
+        primary: 'bg-emerald-50 text-emerald-600',
         emerald: 'bg-emerald-50 text-emerald-600',
         orange: 'bg-orange-50 text-orange-600',
         red: 'bg-red-50 text-red-600'
     };
     const circleClasses: Record<string, string> = {
-        indigo: 'bg-indigo-500/10',
+        primary: 'bg-emerald-500/10',
         emerald: 'bg-emerald-500/10',
         orange: 'bg-orange-500/10',
         red: 'bg-red-500/10'

@@ -1,6 +1,6 @@
-import { User } from "../../users/services/UserService";
+import { UserResponse } from "../../users/services/UserService";
 
-export interface Guard extends User {
+export interface Guard extends UserResponse {
   // Guard specific fields if any, otherwise it uses User fields
 }
 
@@ -33,7 +33,7 @@ export interface Assignment {
   createdAt: string;
   updatedAt: string;
   location: any;
-  guard: Partial<User>;
+  guard: Partial<UserResponse>;
   tasks: AssignmentTask[];
   kardex?: any[];
 }

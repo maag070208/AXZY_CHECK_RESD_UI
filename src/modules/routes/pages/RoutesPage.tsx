@@ -1,5 +1,4 @@
 import { ModuleHeader } from "@app/core/components/ModuleHeader";
-import { useCatalog } from "@app/core/hooks/catalog.hook";
 import { hideLoader, showLoader } from "@app/core/store/loader/loader.slice";
 import { showToast } from "@app/core/store/toast/toast.slice";
 import {
@@ -7,12 +6,11 @@ import {
   ITButton,
   ITDataTable,
   ITDialog,
-  ITSearchSelect,
   ITText,
 } from "@axzydev/axzy_ui_system";
 import { post } from "@app/core/axios/axios";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FaBuilding, FaEdit, FaPrint, FaRoute, FaTrash } from "react-icons/fa";
+import { FaEdit, FaPrint, FaRoute, FaTrash } from "react-icons/fa";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { deleteRoute, getPaginatedRoutes } from "../services/RoutesService";
@@ -23,24 +21,20 @@ const RoutesPage = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [routeToDeleteId, setRouteToDeleteId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedClientId, setSelectedClientId] = useState<string | number>("");
-
-  const { data: clients } = useCatalog("client");
 
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
       setRefreshKey((prev) => prev + 1);
-    }, 300);
+    }, 500);
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
   const externalFilters = useMemo(() => {
     return {
       title: searchTerm,
-      clientId: selectedClientId,
     };
-  }, [searchTerm, selectedClientId]);
+  }, [searchTerm]);
 
   const memoizedFetch = useCallback((params: any) => {
     return getPaginatedRoutes(params);
@@ -117,27 +111,6 @@ const RoutesPage = () => {
 
   const columns = [
     {
-      key: "client",
-      label: "Cliente / Entidad",
-      type: "string",
-      render: (row: any) => (
-        <div className="flex flex-col">
-          <div className="flex items-center gap-2 mb-1">
-            <FaBuilding className="text-slate-400 text-[10px]" />
-            <ITText className="font-black text-slate-700 uppercase text-[10px] tracking-widest">
-              {row.recurringLocations?.[0]?.location?.client?.name ||
-                "Sin Cliente"}
-            </ITText>
-          </div>
-          <ITText className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter block">
-            ID:{" "}
-            {row.recurringLocations?.[0]?.location?.client?.id?.slice(-8) ||
-              "N/A"}
-          </ITText>
-        </div>
-      ),
-    },
-    {
       key: "title",
       label: "Ruta / Referencia",
       type: "string",
@@ -146,12 +119,6 @@ const RoutesPage = () => {
           <ITText className="font-black text-slate-700 text-[11px] uppercase tracking-tight mb-1 block">
             {row.title}
           </ITText>
-          <div className="flex items-center gap-1.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            <ITText className="text-slate-400 text-[9px] font-black uppercase tracking-widest block">
-              {row.client?.name || "SIN CLIENTE"}
-            </ITText>
-          </div>
         </div>
       ),
     },
@@ -211,7 +178,7 @@ const RoutesPage = () => {
           <ITButton
             onClick={() => handleDelete(row.id)}
             variant="outlined"
-            color="error"
+            color="danger"
             title="Eliminar Ruta"
             size="small"
           >
@@ -223,36 +190,20 @@ const RoutesPage = () => {
   ];
 
   return (
-    <div className="p-4 md:p-8   min-h-screen">
+    <div className="p-6 min-h-screen font-sans">
       <ModuleHeader
         title="Gestión de Rutas"
-        subtitle="Configuración de recorridos y puntos de control para rondines"
+        subtitle="Configuración de recorridos and puntos de control para rondines"
         icon={FaRoute}
-        filter={
-          <ITSearchSelect
-            className="!z-20"
-            placeholder="Filtrar por Cliente..."
-            options={(clients || []).map((c: any) => ({
-              label: c.name,
-              value: c.id,
-            }))}
-            value={selectedClientId}
-            onChange={(val) => {
-              setSelectedClientId(val);
-              setRefreshKey((prev) => prev + 1);
-            }}
-          />
-        }
         search={{
           value: searchTerm,
           onChange: setSearchTerm,
           placeholder: "BUSCAR RUTA...",
           icon: FaRoute,
         }}
-        showClearFilters={!!(searchTerm || selectedClientId)}
+        showClearFilters={!!searchTerm}
         onClearFilters={() => {
           setSearchTerm("");
-          setSelectedClientId("");
           setRefreshKey((prev) => prev + 1);
         }}
         onRefresh={refreshTable}
@@ -261,7 +212,7 @@ const RoutesPage = () => {
         createLabel="Nueva Ruta"
       />
 
-      <div className="bg-white rounded-[32px] shadow-sm border border-slate-100 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <ITDataTable
           key={refreshKey}
           columns={columns as any}
@@ -274,40 +225,33 @@ const RoutesPage = () => {
       <ITDialog
         isOpen={!!routeToDeleteId}
         onClose={() => setRouteToDeleteId(null)}
-        title="Confirmar Eliminación"
+        title="Eliminar Ruta"
       >
-        <div className="p-8 text-center">
-          <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6 text-red-500">
-            <FaTrash size={24} />
+        <div className="p-10 text-center">
+          <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-rose-100 shadow-sm">
+            <FaTrash size={32} />
           </div>
-          <ITText className="text-lg font-bold text-slate-800 mb-2 uppercase tracking-tight block">
+          <ITText className="text-xl font-black text-slate-800 uppercase tracking-tight mb-3">
             ¿Eliminar Ruta Operativa?
           </ITText>
-          <ITText className="text-slate-500 text-sm mb-10 leading-relaxed px-4 block">
-            Estás por borrar una ruta y sus puntos de control.
-            <br />
-            <ITText className="font-bold text-red-500/80 block">
-              Esta acción es permanente y no se puede deshacer.
-            </ITText>
+          <ITText className="text-slate-500 text-[11px] font-bold uppercase tracking-widest leading-relaxed mb-10 max-w-xs mx-auto block">
+            Estás por borrar la ruta y sus puntos de control. Esta acción es permanente.
           </ITText>
           <div className="flex gap-4 justify-center">
             <ITButton
-              variant="outlined"
-              color="secondary"
+              variant="ghost"
+              className="px-8 font-black text-[11px] uppercase tracking-widest text-slate-400"
               onClick={() => setRouteToDeleteId(null)}
-              className="!rounded-xl px-10"
             >
-              <ITText className="uppercase tracking-widest text-[10px] font-black block">
-                No, Mantener
-              </ITText>
+              Cancelar
             </ITButton>
             <ITButton
+              variant="filled"
+              color="danger"
+              className="px-10 !rounded-2xl shadow-xl shadow-rose-200"
               onClick={confirmDelete}
-              className="bg-red-500 hover:bg-red-600 text-white !rounded-xl px-10 border-none shadow-lg shadow-red-100"
             >
-              <ITText className="uppercase tracking-widest text-[10px] font-black block">
-                Sí, Eliminar
-              </ITText>
+              ELIMINAR AHORA
             </ITButton>
           </div>
         </div>

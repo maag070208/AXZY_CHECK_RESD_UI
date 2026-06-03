@@ -1,56 +1,55 @@
 import { get, post, put, remove } from "@app/core/axios/axios";
 import { TResult } from "@app/core/types/TResult";
 
-import { Schedule } from "../../schedules/SchedulesService";
 
-export interface User {
+
+export interface UserResponse {
   id: string;
   name: string;
-  lastName: string;
+  lastName: string | null;
   username: string;
+  active: boolean;
+  isLoggedIn: boolean;
   roleId: string;
+  scheduleId: string | null;
   role: {
     id: string;
     name: string;
     value: string;
   };
-  active: boolean;
-  shiftStart?: string; // HH:mm
-  shiftEnd?: string;   // HH:mm
-  isLoggedIn?: boolean;
-  assignmentLogs?: any[];
-  schedule?: Schedule;
-  scheduleId?: string;
-  clientId?: string;
-  client?: {
+  schedule?: {
     id: string;
     name: string;
-    active: boolean;
-  };
+    startTime: string;
+    endTime: string;
+  } | null;
+  assignmentLogs?: any[];
 }
 
 export interface CreateUserDto {
   name: string;
-  lastName: string;
+  lastName?: string;
   username: string;
   password?: string;
-  roleId: string;
+  roleId?: string | null;
+  role?: string;
   shiftStart?: string;
   shiftEnd?: string;
-  scheduleId?: string;
-  clientId?: string;
+  scheduleId?: string | null;
 }
 
 export interface UpdateUserDto {
-    name?: string;
-    lastName?: string;
-    username?: string;
-    roleId?: string;
-    shiftStart?: string;
-    shiftEnd?: string;
-    scheduleId?: string;
-    clientId?: string;
-    active?: boolean;
+  name?: string;
+  lastName?: string;
+  username?: string;
+  password?: string;
+  roleId?: string | null;
+  role?: string;
+  shiftStart?: string;
+  shiftEnd?: string;
+  scheduleId?: string | null;
+  active?: boolean;
+  isLoggedIn?: boolean;
 }
 
 export interface ChangePasswordDto {
@@ -74,12 +73,12 @@ export interface ChangePasswordDto {
     newPassword: string;
 }
 
-export const getUsers = async (): Promise<TResult<User[]>> => {
-  return await get<User[]>("/users");
+export const getUsers = async (): Promise<TResult<UserResponse[]>> => {
+  return await get<UserResponse[]>("/users");
 };
 
-export const getPaginatedUsers = async (params: any): Promise<{ data: User[], total: number }> => {
-  const res = await post<{ rows: User[], total: number }>("/users/datatable", params);
+export const getPaginatedUsers = async (params: any): Promise<{ data: UserResponse[], total: number }> => {
+  const res = await post<{ rows: UserResponse[], total: number }>("/users/datatable", params);
   if (res.success && res.data) {
       return {
           data: res.data.rows || [],
@@ -89,19 +88,14 @@ export const getPaginatedUsers = async (params: any): Promise<{ data: User[], to
   return { data: [], total: 0 };
 };
 
-export const createUser = async (data: CreateUserDto): Promise<TResult<User>> => {
-    return await post<User>("/users", data);
+export const createUser = async (data: CreateUserDto): Promise<TResult<UserResponse>> => {
+    return await post<UserResponse>("/users", data);
 };
 
-export const updateUser = async (id: string, data: UpdateUserDto): Promise<TResult<User>> => {
-    return await put<User>(`/users/${id}`, data);
+export const updateUser = async (id: string, data: UpdateUserDto): Promise<TResult<UserResponse>> => {
+    return await put<UserResponse>(`/users/${id}`, data);
 };
 
-/* 
-   NOTE: The current API requires oldPassword for changePassword. 
-   If this is intended for Admin use, we might need a different endpoint.
-   For now, we map what exists.
-*/
 export const changePassword = async (id: string, data: ChangePasswordDto): Promise<TResult<boolean>> => {
     return await put<boolean>(`/users/${id}/password`, data);
 };

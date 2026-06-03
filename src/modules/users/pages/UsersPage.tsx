@@ -22,7 +22,7 @@ import {
   deleteUser,
   getPaginatedUsers,
   updateUser,
-  User,
+  UserResponse,
 } from "../services/UserService";
 
 const UsersPage = () => {
@@ -32,18 +32,15 @@ const UsersPage = () => {
   const [activeFilter, setActiveFilter] = useState("all");
 
   useCatalog("role");
-  const { data: clients } = useCatalog("client");
   const [schedules, setSchedules] = useState<any[]>([]);
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [changingPasswordUser, setChangingPasswordUser] = useState<User | null>(
+  const [editingUser, setEditingUser] = useState<UserResponse | null>(null);
+  const [changingPasswordUser, setChangingPasswordUser] = useState<UserResponse | null>(
     null,
   );
-  const [changingClientUser, setChangingClientUser] = useState<User | null>(
-    null,
-  );
-  const [changingScheduleUser, setChangingScheduleUser] = useState<User | null>(
+
+  const [changingScheduleUser, setChangingScheduleUser] = useState<UserResponse | null>(
     null,
   );
   const [userToDeleteId, setUserToDeleteId] = useState<number | null>(null);
@@ -98,21 +95,6 @@ const UsersPage = () => {
     }
   };
 
-  const handleReassignClient = async (clientId: string) => {
-    if (!changingClientUser) return;
-    dispatch(showLoader());
-    try {
-      const res = await updateUser(changingClientUser.id, { clientId });
-      if (res.success) {
-        dispatch(showToast({ message: "Cliente reasignado", type: "success" }));
-        handleSuccess();
-        setChangingClientUser(null);
-      }
-    } finally {
-      dispatch(hideLoader());
-    }
-  };
-
   const handleReassignSchedule = async (scheduleId: string) => {
     if (!changingScheduleUser) return;
     dispatch(showLoader());
@@ -135,7 +117,7 @@ const UsersPage = () => {
       {
         key: "user",
         label: "USUARIO / EXPEDIENTE",
-        render: (row: User) => (
+        render: (row: UserResponse) => (
           <div className="flex flex-col">
             <ITText className="font-black text-slate-700 text-[11px] uppercase tracking-tight mb-1">
               {row.name} {row.lastName}
@@ -152,7 +134,7 @@ const UsersPage = () => {
       {
         key: "roleId",
         label: "ROL / CATEGORÍA",
-        render: (row: User) => {
+        render: (row: UserResponse) => {
           const roleValue = row.role?.value || "S/R";
           const roleName = row.role?.name || "";
 
@@ -170,9 +152,9 @@ const UsersPage = () => {
         },
       },
       {
-        key: "client",
-        label: "ASIGNACIÓN",
-        render: (row: User) => {
+        key: "schedule",
+        label: "HORARIO / TURNO",
+        render: (row: UserResponse) => {
           const roleName = row.role?.name || "";
           const isOp = ["GUARD", "SHIFT", "MAINT"].includes(roleName);
           if (!isOp)
@@ -185,16 +167,18 @@ const UsersPage = () => {
           return (
             <div className="flex flex-col">
               <ITText className="font-black text-slate-700 text-[11px] uppercase tracking-tight mb-1">
-                {row.client?.name || "SIN ASIGNAR"}
+                {row.schedule
+                  ? `${row.schedule.name}`
+                  : "SIN HORARIO"}
               </ITText>
-              <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                <ITText className="text-slate-400 text-[9px] font-black uppercase tracking-widest">
-                  {row.schedule
-                    ? `${row.schedule.name} (${row.schedule.startTime}-${row.schedule.endTime})`
-                    : "SIN HORARIO"}
-                </ITText>
-              </div>
+              {row.schedule && (
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  <ITText className="text-slate-400 text-[9px] font-black uppercase tracking-widest">
+                    {row.schedule.startTime} - {row.schedule.endTime}
+                  </ITText>
+                </div>
+              )}
             </div>
           );
         },
@@ -202,7 +186,7 @@ const UsersPage = () => {
       {
         key: "active",
         label: "ESTADO",
-        render: (row: User) => (
+        render: (row: UserResponse) => (
           <ITBadget color={row.active ? "success" : "error"} size="small">
             {row.active ? "ACTIVO" : "INACTIVO"}
           </ITBadget>
@@ -211,7 +195,7 @@ const UsersPage = () => {
       {
         key: "actions",
         label: "CONTROL",
-        render: (row: User) => (
+        render: (row: UserResponse) => (
           <div className="flex items-center gap-2">
             <ITButton
               onClick={() => setChangingScheduleUser(row)}
@@ -221,15 +205,6 @@ const UsersPage = () => {
               title="Horario"
             >
               <FaClock size={14} />
-            </ITButton>
-            <ITButton
-              onClick={() => setChangingClientUser(row)}
-              variant="outlined"
-              color="info"
-              size="small"
-              title="Cliente"
-            >
-              <FaUserShield size={14} />
             </ITButton>
             <ITButton
               onClick={() => setChangingPasswordUser(row)}
@@ -251,7 +226,7 @@ const UsersPage = () => {
             <ITButton
               onClick={() => setUserToDeleteId(row.id as any)}
               variant="outlined"
-              color="error"
+              color="danger"
               size="small"
               title="Eliminar"
             >
@@ -265,7 +240,7 @@ const UsersPage = () => {
   );
 
   return (
-    <div className="p-6   min-h-screen font-sans">
+    <div className="p-6 min-h-screen font-sans">
       <ModuleHeader
         title="Directorio de Usuarios"
         subtitle="Gestión de expedientes operativos y controles de acceso"
@@ -292,9 +267,8 @@ const UsersPage = () => {
         }
       />
 
-      <div className="bg-white rounded-[24px] shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden">
-        <ITDataTable
-          key={refreshKey}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <ITDataTable<UserResponse & Record<string, unknown>> key={refreshKey}
           fetchData={memoizedFetch as any}
           columns={columns as any}
           externalFilters={externalFilters}
@@ -337,64 +311,6 @@ const UsersPage = () => {
             onSuccess={handleSuccess}
           />
         )}
-      </ITDialog>
-
-      {/* CLIENT REASSIGN DIALOG */}
-      <ITDialog
-        isOpen={!!changingClientUser}
-        onClose={() => setChangingClientUser(null)}
-        title="Reasignar Cliente"
-        className="!max-w-xl !w-full"
-      >
-        <div className="flex flex-col bg-white overflow-hidden">
-          <div className="p-10 space-y-10">
-            <section>
-              <div className="flex items-center gap-2 mb-8">
-                <div className="w-1.5 h-4 bg-indigo-500 rounded-full" />
-                <ITText className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                  Asignación Corporativa
-                </ITText>
-              </div>
-
-              <div className="space-y-6">
-                <div className="p-6 bg-slate-50 rounded-[24px] border border-slate-100 flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-indigo-500 border border-slate-100">
-                    <FaUserShield size={20} />
-                  </div>
-                  <div className="flex flex-col">
-                    <ITText className="text-sm font-black text-slate-800 uppercase tracking-tight">
-                      {changingClientUser?.name} {changingClientUser?.lastName}
-                    </ITText>
-                    <ITText className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
-                      ID: {changingClientUser?.id?.slice(0, 8)}
-                    </ITText>
-                  </div>
-                </div>
-
-                <ITSelect
-                  label="Seleccionar Cliente Destino"
-                  name="clientId"
-                  placeholder="SELECCIONAR CLIENTE..."
-                  options={
-                    clients.map((c) => ({ label: c.name, value: c.id })) as any
-                  }
-                  value={changingClientUser?.clientId || ""}
-                  onChange={(e: any) => handleReassignClient(e.target.value)}
-                />
-              </div>
-            </section>
-          </div>
-
-          <div className="flex-none flex justify-end items-center px-10 py-8 border-t border-slate-100 bg-slate-50/50 gap-4">
-            <ITButton
-              variant="filled"
-              color="secondary"
-              onClick={() => setChangingClientUser(null)}
-            >
-              Cancelar
-            </ITButton>
-          </div>
-        </div>
       </ITDialog>
 
       {/* SCHEDULE REASSIGN DIALOG */}

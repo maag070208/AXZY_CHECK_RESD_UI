@@ -6,10 +6,10 @@ import React from "react";
 import { FaKey } from "react-icons/fa";
 import { useDispatch } from "react-redux";
 import * as Yup from "yup";
-import { resetPassword, User } from "../services/UserService";
+import { resetPassword, UserResponse } from "../services/UserService";
 
 interface Props {
-  user: User;
+  user: UserResponse;
   onCancel: () => void;
   onSuccess: () => void;
 }

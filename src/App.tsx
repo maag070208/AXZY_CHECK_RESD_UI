@@ -10,11 +10,17 @@ import { setAuth } from "./core/store/auth/auth.slice";
 import HomePage from "./modules/home/pages/HomePage";
 
 import LocationsPage from "./modules/locations/pages/LocationsPage";
-import ClientsPage from "./modules/clients/pages/ClientsPage";
-import ClientDetailsPage from "./modules/clients/pages/ClientDetailsPage";
+import ResidentsPage from "./modules/residents/pages/ResidentsPage";
+import ResidentDetailPage from "./modules/residents/pages/ResidentDetailPage";
+import ContactsPage from "./modules/residents/pages/ContactsPage";
+import PropertiesPage from "./modules/properties/pages/PropertiesPage";
+import AccessesPage from "./modules/accesses/pages/AccessesPage";
 
 import UsersPage from "./modules/users/pages/UsersPage";
+import PaymentsPage from "./modules/payments/pages/PaymentsPage";
+import FeesPage from "./modules/payments/pages/FeesPage";
 import IncidentsPage from "./modules/incidents/pages/IncidentsPage";
+import ComplaintsPage from "./modules/complaints/pages/ComplaintsPage";
 import MaintenancesPage from "./modules/maintenances/pages/MaintenancesPage";
 import KardexPage from "./modules/kardex/pages/KardexPage";
 import RoundsPage from "./modules/rounds/pages/RoundsPage";
@@ -83,14 +89,19 @@ function App() {
           <Route path="/guards" element={<GuardsPage />} />
           
           <Route path="/locations" element={<LocationsPage />} />
-          <Route path="/clients" element={<ClientsPage />} />
-          <Route path="/clients/:id" element={<ClientDetailsPage />} />
+          <Route path="/residents" element={<ResidentsPage />} />
+          <Route path="/residents/:id" element={<ResidentDetailPage />} />
+          <Route path="/properties" element={<PropertiesPage />} />
+          <Route path="/accesses" element={<AccessesPage />} />
           <Route path="/routes" element={<RoutesPage />} />
           <Route path="/routes/new" element={<CreateRoutePage />} />
           <Route path="/routes/edit/:id" element={<CreateRoutePage />} />
-
+          <Route path="/payments" element={<PaymentsPage />} />
+          <Route path="/fees" element={<FeesPage />} />
           <Route path="/users" element={<UsersPage />} />
           <Route path="/incidents" element={<IncidentsPage />} />
+          <Route path="/complaints" element={<ComplaintsPage />} />
+          <Route path="/contacts" element={<ContactsPage />} />
           <Route path="/maintenances" element={<MaintenancesPage />} />
           <Route path="/kardex" element={<KardexPage />} />
           <Route path="/schedules" element={<SchedulesPage />} />

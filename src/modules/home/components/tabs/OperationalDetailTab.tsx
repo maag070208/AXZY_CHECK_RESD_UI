@@ -174,11 +174,11 @@ export const OperationalDetailTab = () => {
                                             </div>
                                         </td>
                                         <td className="px-8 py-6 text-right">
-                                            <ITButton 
-                                                size="small" 
-                                                variant="filled" 
-                                                color="primary" 
-                                                className="!rounded-2xl !py-2.5 !px-6 !bg-slate-900 group-hover:!bg-emerald-600 transition-all duration-300 shadow-xl shadow-slate-200 group-hover:shadow-emerald-200 flex items-center gap-2 ml-auto"
+                                            <ITButton
+                                                size="small"
+                                                variant="filled"
+                                                color="primary"
+                                                className="!rounded-2xl !py-2.5 !px-6 shadow-xl shadow-slate-200 flex items-center gap-2 ml-auto"
                                                 onClick={() => handleViewDetail(item)}
                                             >
                                                 <FaEye className="text-sm" />

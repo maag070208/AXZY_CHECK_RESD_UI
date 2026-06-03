@@ -4,7 +4,6 @@ import * as userService from "../../users/services/UserService";
 import * as schedulesService from "../../schedules/SchedulesService";
 import { vi } from "vitest";
 import userEvent from "@testing-library/user-event";
-import React from "react";
 import "@testing-library/jest-dom";
 
 // Mock useNavigate
@@ -55,9 +54,11 @@ const mockGuards = {
       lastName: "Pérez",
       username: "juanperez",
       active: true,
+      isLoggedIn: false,
+      roleId: "1",
       role: { id: "1", name: "GUARD", value: "Guardia" },
-      client: { id: "client-1", name: "Cliente Test" },
-      schedule: { id: "sched-1", name: "Turno A", startTime: "08:00", endTime: "18:00" },
+      scheduleId: "sched-1",
+      schedule: { id: "sched-1", name: "Turno A", startTime: "08:00", endTime: "18:00", active: true },
       assignmentLogs: [],
     },
     {
@@ -66,18 +67,20 @@ const mockGuards = {
       lastName: "Gómez",
       username: "pedrogomez",
       active: false,
+      roleId: "2",
       role: { id: "2", name: "SHIFT", value: "Jefe de Turno" },
-      client: null,
-      schedule: null,
+      scheduleId: null,
+      schedule: undefined,
       assignmentLogs: [],
+      isLoggedIn: false,
     },
   ],
   total: 2,
 };
 
 const mockSchedules = [
-  { id: "sched-1", name: "Turno A", startTime: "08:00", endTime: "18:00" },
-  { id: "sched-2", name: "Turno B", startTime: "18:00", endTime: "08:00" },
+  { id: "sched-1", name: "Turno A", startTime: "08:00", endTime: "18:00", active: true },
+  { id: "sched-2", name: "Turno B", startTime: "18:00", endTime: "08:00", active: true },
 ];
 
 describe("GuardsPage (Pruebas del módulo de Guardias)", () => {
@@ -107,7 +110,7 @@ describe("GuardsPage (Pruebas del módulo de Guardias)", () => {
     const user = userEvent.setup();
     vi.mocked(userService.updateUser).mockResolvedValue({
       success: true,
-      data: undefined,
+      data: mockGuards.rows[0] as any,
       messages: ["Guardia actualizado"],
     });
 

@@ -1,5 +1,4 @@
 import { ModuleHeader } from "@app/core/components/ModuleHeader";
-import { useCatalog } from "@app/core/hooks/catalog.hook";
 import { showToast } from "@app/core/store/toast/toast.slice";
 import {
   ITBadget,
@@ -7,7 +6,6 @@ import {
   ITDataTable,
   ITDialog,
   ITLoader,
-  ITSearchSelect,
   ITTripleFilter,
 } from "@axzydev/axzy_ui_system";
 import dayjs from "dayjs";
@@ -16,7 +14,7 @@ import utc from "dayjs/plugin/utc";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FaEye, FaRoute, FaStop, FaUser } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { getRoutesList } from "../../routes/services/RoutesService";
 import {
   endRound,
@@ -28,22 +26,17 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 const RoundsPage = () => {
-  const [searchParams] = useSearchParams();
   const [selectedDate, setSelectedDate] = useState<any>([
     dayjs().tz("America/Tijuana").toDate(),
     dayjs().tz("America/Tijuana").toDate(),
   ]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
-  const [selectedClientId, setSelectedClientId] = useState<string | number>(
-    searchParams.get("clientId") || "",
-  );
   const [refreshKey, setRefreshKey] = useState(0);
   const [isFinishing, setIsFinishing] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const { data: clients } = useCatalog("client");
   const user = useSelector((state: any) => state.auth);
   const isResident = user?.role === "RESDN";
 
@@ -80,21 +73,8 @@ const RoundsPage = () => {
       filters.status = statusFilter;
     }
 
-    if (selectedClientId) {
-      filters.clientId = selectedClientId;
-    } else if (isResident && user?.clientId) {
-      filters.clientId = user.clientId;
-    }
-
     return filters;
-  }, [
-    selectedDate,
-    searchTerm,
-    statusFilter,
-    selectedClientId,
-    isResident,
-    user?.clientId,
-  ]);
+  }, [selectedDate, searchTerm, statusFilter]);
 
   const memoizedFetch = useCallback(
     async (params: any) => {
@@ -134,14 +114,6 @@ const RoundsPage = () => {
                 routesMap[row.recurringConfigurationId] ||
                 "Ronda General"}
             </span>
-            <div className="flex items-center gap-1.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-              <span className="text-slate-400 text-[9px] font-black uppercase tracking-widest">
-                {row.recurringConfiguration?.client?.name ||
-                  row.client?.name ||
-                  "SIN CLIENTE ASIGNADO"}
-              </span>
-            </div>
           </div>
         ),
       },
@@ -262,28 +234,11 @@ const RoundsPage = () => {
   );
 
   return (
-    <div className="p-6   min-h-screen font-sans">
+    <div className="p-6 min-h-screen font-sans">
       <ModuleHeader
         title="Historial de Rondas"
         subtitle="Supervisión y cronología de recorridos operativos en tiempo real"
         icon={FaRoute}
-        filter={
-          !isResident && (
-            <ITSearchSelect
-              placeholder="FILTRAR POR CLIENTE..."
-              options={(clients || []).map((c: any) => ({
-                label: c.name,
-                value: c.id,
-              }))}
-              value={selectedClientId}
-              onChange={(val) => {
-                setSelectedClientId(val);
-                setRefreshKey((prev) => prev + 1);
-              }}
-              className="w-full"
-            />
-          )
-        }
         search={{
           value: searchTerm,
           onChange: setSearchTerm,
@@ -315,7 +270,7 @@ const RoundsPage = () => {
         refreshKey={refreshKey}
       />
 
-      <div className="bg-white rounded-[24px] shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden mt-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mt-6">
         <ITDataTable<IRound & Record<string, unknown>>
           key={refreshKey}
           columns={columns as any}

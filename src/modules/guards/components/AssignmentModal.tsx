@@ -245,7 +245,7 @@ export const AssignmentModal = ({
                       <ITButton
                         onClick={() => removeTask(index)}
                         variant="icon-only"
-                        color="gray"
+                        color="danger"
                         className="text-slate-300 hover:text-rose-500 transition-colors p-2"
                       >
                         <FaTrash size={12} />

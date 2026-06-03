@@ -1,6 +1,5 @@
 import { post } from "@app/core/axios/axios";
 import { ModuleHeader } from "@app/core/components/ModuleHeader";
-import { useCatalog } from "@app/core/hooks/catalog.hook";
 import { hideLoader, showLoader } from "@app/core/store/loader/loader.slice";
 import { AppState } from "@app/core/store/store";
 import { showToast } from "@app/core/store/toast/toast.slice";
@@ -8,7 +7,7 @@ import {
   ITButton,
   ITDataTable,
   ITDialog,
-  ITSearchSelect,
+  ITText,
 } from "@axzydev/axzy_ui_system";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -21,7 +20,6 @@ import {
   FaTrash,
 } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
-import { useSearchParams } from "react-router-dom";
 import { ZonesModal } from "../../zones/components/ZonesModal";
 import { BulkPrintModal } from "../components/BulkPrintModal";
 import { LocationForm } from "../components/LocationForm";
@@ -34,31 +32,18 @@ import {
 } from "../service/locations.service";
 
 const LocationsPage = () => {
-  const [searchParams] = useSearchParams();
   const [refreshKey, setRefreshKey] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedClientId, setSelectedClientId] = useState<string | number>(
-    searchParams.get("clientId") || "",
-  );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isZonesModalOpen, setIsZonesModalOpen] = useState(false);
   const [isBulkPrintModalOpen, setIsBulkPrintModalOpen] = useState(false);
-
-  useEffect(() => {
-    const cid = searchParams.get("clientId");
-    if (cid) {
-      setSelectedClientId(cid);
-    }
-  }, [searchParams]);
-
-  const { data: clients } = useCatalog("client");
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setRefreshKey((prev) => prev + 1);
     }, 500);
     return () => clearTimeout(timer);
-  }, [searchTerm, selectedClientId]);
+  }, [searchTerm]);
 
   const dispatch = useDispatch();
   const user = useSelector((state: AppState) => state.auth);
@@ -73,8 +58,8 @@ const LocationsPage = () => {
   }, []);
 
   const externalFilters = useMemo(() => {
-    return { name: searchTerm, clientId: selectedClientId };
-  }, [searchTerm, selectedClientId]);
+    return { name: searchTerm };
+  }, [searchTerm]);
 
   const handleCreate = async (data: any, keepOpen?: boolean) => {
     dispatch(showLoader());
@@ -202,15 +187,9 @@ const LocationsPage = () => {
         sortable: true,
         render: (row: any) => (
           <div className="flex flex-col">
-            <span className="font-black text-slate-700 text-[11px] uppercase tracking-tight mb-1">
+            <span className="font-black text-slate-700 text-[11px] uppercase tracking-tight">
               {row.name}
             </span>
-            <div className="flex items-center gap-1.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-              <span className="text-slate-400 text-[9px] font-black uppercase tracking-widest">
-                CLIENTE: {row.client?.name || row.clientName || "SIN ASIGNAR"}
-              </span>
-            </div>
           </div>
         ),
       },
@@ -261,7 +240,7 @@ const LocationsPage = () => {
                   onClick={() => setLocationToDelete(row)}
                   size="small"
                   variant="outlined"
-                  color="error"
+                  color="danger"
                   title="Eliminar"
                 >
                   <FaTrash size={14} />
@@ -276,23 +255,11 @@ const LocationsPage = () => {
   );
 
   return (
-    <div className="p-8   min-h-screen">
+    <div className="p-6 min-h-screen font-sans">
       <ModuleHeader
         title="Directorio de Ubicaciones"
         subtitle="Gestión y control de puntos QR para rondines y asistencia"
         icon={FaSearchLocation}
-        filter={
-          <ITSearchSelect
-            className="!z-20"
-            placeholder="Filtrar por Cliente..."
-            options={(clients || []).map((c: any) => ({
-              label: c.name,
-              value: c.id,
-            }))}
-            value={selectedClientId}
-            onChange={(val: any) => setSelectedClientId(val)}
-          />
-        }
         search={{
           value: searchTerm,
           onChange: setSearchTerm,
@@ -307,18 +274,16 @@ const LocationsPage = () => {
         createLabel="Nueva Ubicación"
         actions={
           <div className="flex items-center gap-3">
-            {selectedClientId && (
-              <ITButton
-                onClick={() => setIsZonesModalOpen(true)}
-                variant="filled"
-                color="secondary"
-              >
-                <div className="flex items-center gap-2">
-                  <FaMapMarkedAlt size={12} />
-                  <span className="hidden lg:inline">Zonas del Cliente</span>
-                </div>
-              </ITButton>
-            )}
+            <ITButton
+              onClick={() => setIsZonesModalOpen(true)}
+              variant="filled"
+              color="secondary"
+            >
+              <div className="flex items-center gap-2">
+                <FaMapMarkedAlt size={12} />
+                <span className="hidden lg:inline">Zonas</span>
+              </div>
+            </ITButton>
 
             <ITButton
               onClick={() => setIsBulkPrintModalOpen(true)}
@@ -331,11 +296,10 @@ const LocationsPage = () => {
               </div>
             </ITButton>
 
-            {(searchTerm || selectedClientId) && (
+            {searchTerm && (
               <ITButton
                 onClick={() => {
                   setSearchTerm("");
-                  setSelectedClientId("");
                 }}
                 variant="filled"
                 color="error"
@@ -349,7 +313,7 @@ const LocationsPage = () => {
         }
       />
 
-      <div className="bg-white rounded-[32px] shadow-sm border border-slate-100 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <ITDataTable
           key={refreshKey}
           columns={columns as any}
@@ -363,37 +327,21 @@ const LocationsPage = () => {
         isOpen={isBulkPrintModalOpen}
         onClose={() => setIsBulkPrintModalOpen(false)}
         onConfirm={handlePrintBulk}
-        initialClientId={selectedClientId as string}
       />
 
       <ZonesModal
         isOpen={isZonesModalOpen}
         onClose={() => setIsZonesModalOpen(false)}
-        clientId={selectedClientId as string}
-        clientName={
-          clients?.find((c: any) => String(c.id) === String(selectedClientId))
-            ?.name || "Cliente"
-        }
       />
 
       <ITDialog
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title="Registro de Ubicación"
+        className="!max-w-2xl !w-full"
       >
         {isModalOpen && (
           <LocationForm
-            initialData={
-              selectedClientId
-                ? {
-                    clientId: selectedClientId as string,
-                    aisle: "",
-                    spot: "",
-                    number: "",
-                    name: "",
-                  }
-                : undefined
-            }
             onSubmit={handleCreate}
             onCancel={() => setIsModalOpen(false)}
           />
@@ -404,6 +352,7 @@ const LocationsPage = () => {
         isOpen={!!editingLocation}
         onClose={() => setEditingLocation(null)}
         title="Actualizar Ubicación"
+        className="!max-w-2xl !w-full"
       >
         {editingLocation && (
           <LocationForm
@@ -417,37 +366,35 @@ const LocationsPage = () => {
       <ITDialog
         isOpen={!!locationToDelete}
         onClose={() => setLocationToDelete(null)}
-        title="Confirmar Eliminación"
+        title="Eliminar Ubicación"
       >
-        <div className="p-6 text-center">
-          <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500">
-            <FaTrash size={24} />
+        <div className="p-10 text-center">
+          <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-rose-100 shadow-sm">
+            <FaTrash size={32} />
           </div>
-          <h3 className="text-lg font-bold text-slate-800 mb-2">
-            ¿Eliminar ubicación?
-          </h3>
-          <p className="text-slate-500 text-sm mb-8">
+          <ITText className="text-xl font-black text-slate-800 uppercase tracking-tight mb-3">
+            ¿Eliminar Ubicación?
+          </ITText>
+          <ITText className="text-slate-500 text-[11px] font-bold uppercase tracking-widest leading-relaxed mb-10 max-w-xs mx-auto block">
             Estás por borrar{" "}
             <span className="font-bold text-slate-700">
               {locationToDelete?.name}
             </span>
-            .<br />
-            Esta acción es permanente y no se puede deshacer.
-          </p>
-          <div className="flex gap-3 justify-center">
+            . Esta acción es permanente y no se puede deshacer.
+          </ITText>
+          <div className="flex gap-4 justify-center">
             <ITButton
-              variant="outlined"
-              color="secondary"
+              variant="ghost"
+              className="px-8 font-black text-[11px] uppercase tracking-widest text-slate-400"
               onClick={() => setLocationToDelete(null)}
-              className="!rounded-xl px-8"
             >
-              No, Mantener
+              Cancelar
             </ITButton>
             <ITButton
-              onClick={confirmDelete}
               variant="filled"
               color="danger"
-              className="!rounded-xl px-8"
+              className="px-10 !rounded-2xl shadow-xl shadow-rose-200"
+              onClick={confirmDelete}
             >
               Sí, Eliminar
             </ITButton>

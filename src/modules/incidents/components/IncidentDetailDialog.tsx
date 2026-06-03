@@ -80,14 +80,6 @@ const IncidentDetailDialog = ({
                         {incident.type?.name || "S/T"}
                       </span>
                     </div>
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                        Sitio
-                      </span>
-                      <span className="text-[11px] font-black text-emerald-600 uppercase">
-                        {incident.client?.name || "N/A"}
-                      </span>
-                    </div>
                   </div>
 
                   <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100">
@@ -258,7 +250,7 @@ const IncidentDetailDialog = ({
           {isAdmin && (
             <ITButton
               variant="outlined"
-              color="error"
+              color="danger"
               className="px-6 !border-rose-100 !bg-white !text-rose-500 hover:!bg-rose-50"
               onClick={() => onDelete(incident)}
             >

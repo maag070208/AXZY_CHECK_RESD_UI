@@ -1,16 +1,10 @@
-import { get, post, put, remove } from "@app/core/axios/axios";
+import { post, put, remove } from "@app/core/axios/axios";
 
 export interface Zone {
   id: string;
-  clientId: string;
   name: string;
   active: boolean;
 }
-
-export const getZonesByClient = async (clientId: string) => {
-  const res = await get<any>(`/zones/client/${clientId}`);
-  return res.data || [];
-};
 
 export const getZones = async () => {
   const res = await post<any>("/zones/datatable", { page: 1, limit: 1000 });
@@ -32,7 +26,7 @@ export const getPaginatedZones = async (params: any) => {
   return { data: [], total: 0 };
 };
 
-export const createZone = async (data: { clientId: string; name: string }) => {
+export const createZone = async (data: { name: string }) => {
   return await post<Zone>("/zones", data);
 };
 

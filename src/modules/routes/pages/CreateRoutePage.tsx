@@ -1,5 +1,3 @@
-import { post } from "@app/core/axios/axios";
-import { useCatalog } from "@app/core/hooks/catalog.hook";
 import { hideLoader, showLoader } from "@app/core/store/loader/loader.slice";
 import { showToast } from "@app/core/store/toast/toast.slice";
 import {
@@ -34,7 +32,8 @@ import {
   Location,
 } from "../../locations/service/locations.service";
 import { CreateUserWizard } from "../../users/components/CreateUserWizard";
-import { getUsers, User } from "../../users/services/UserService";
+import { getUsers, UserResponse } from "../../users/services/UserService";
+import { getZones, Zone } from "../../zones/services/ZonesService";
 import {
   createRoute,
   getRouteById,
@@ -54,41 +53,19 @@ const CreateRoutePage = () => {
   const [addedLocations, setAddedLocations] = useState<ILocationCreate[]>([]);
   const [selectedGuards, setSelectedGuards] = useState<string[]>([]);
   const [allLocations, setAllLocations] = useState<Location[]>([]);
-  const [allGuards, setAllGuards] = useState<User[]>([]);
-  const [clientZones, setClientZones] = useState<any[]>([]);
+  const [allGuards, setAllGuards] = useState<UserResponse[]>([]);
+  const [zones, setZones] = useState<Zone[]>([]);
   const [selectedLocId, setSelectedLocId] = useState<string>("");
-  const [selectedClientId, setSelectedClientId] = useState<string | number>("");
   const [selectedZoneId, setSelectedZoneId] = useState<string | number>("");
   const [fetchingData, setFetchingData] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
   const [active, setActive] = useState(true);
   const [guardSearch, setGuardSearch] = useState("");
 
-  const { data: clients } = useCatalog("client");
-
   useEffect(() => {
     fetchInitialData();
     if (isEditing) fetchFullData(id);
   }, [id]);
-
-  useEffect(() => {
-    if (selectedClientId) fetchZones(String(selectedClientId));
-    else {
-      setClientZones([]);
-      setSelectedZoneId("");
-    }
-  }, [selectedClientId]);
-
-  const fetchZones = async (clientId: string) => {
-    try {
-      const res = await post<any>("/zones/datatable", {
-        filters: { clientId },
-      });
-      if (res.success && res.data) setClientZones(res.data.rows || []);
-    } catch (error) {
-      console.error(error);
-    }
-  };
 
   const fetchFullData = async (routeId: string) => {
     setFetchingData(true);
@@ -109,8 +86,6 @@ const CreateRoutePage = () => {
           })),
         );
         setSelectedGuards(data.guards?.map((g: any) => g.id) || []);
-        if (data.recurringLocations?.[0]?.location?.clientId)
-          setSelectedClientId(data.recurringLocations[0].location.clientId);
       }
     } catch (e) {
       dispatch(showToast({ message: "Error al cargar datos", type: "error" }));
@@ -120,8 +95,9 @@ const CreateRoutePage = () => {
   };
 
   const fetchInitialData = async () => {
-    const [locRes, usersRes] = await Promise.all([getLocations(), getUsers()]);
+    const [locRes, usersRes, zonesRes] = await Promise.all([getLocations(), getUsers(), getZones()]);
     if (locRes.success) setAllLocations(locRes.data);
+    if (zonesRes.success) setZones(zonesRes.data || []);
     if (usersRes.success) {
       setAllGuards(
         usersRes.data?.filter((u: any) => {
@@ -211,24 +187,19 @@ const CreateRoutePage = () => {
     () =>
       allGuards.filter(
         (g) =>
-          (!selectedClientId ||
-            String(g.clientId) === String(selectedClientId) ||
-            !g.clientId) &&
-          (g.name.toLowerCase().includes(guardSearch.toLowerCase()) ||
-            g.lastName?.toLowerCase().includes(guardSearch.toLowerCase())),
+          g.name.toLowerCase().includes(guardSearch.toLowerCase()) ||
+          g.lastName?.toLowerCase().includes(guardSearch.toLowerCase()),
       ),
-    [allGuards, selectedClientId, guardSearch],
+    [allGuards, guardSearch],
   );
 
   const availableLocations = useMemo(
     () =>
       allLocations.filter(
         (l) =>
-          !addedLocations.find((al) => al.locationId === (l.id as any)) &&
-          (!selectedClientId ||
-            String(l.clientId) === String(selectedClientId)),
+          !addedLocations.find((al) => al.locationId === (l.id as any)),
       ),
-    [allLocations, addedLocations, selectedClientId],
+    [allLocations, addedLocations],
   );
 
   const handleSave = async () => {
@@ -236,7 +207,6 @@ const CreateRoutePage = () => {
     try {
       const payload = {
         title,
-        clientId: selectedClientId,
         locations: addedLocations,
         guardIds: selectedGuards,
         active,
@@ -248,7 +218,8 @@ const CreateRoutePage = () => {
         dispatch(showToast({ message: "Ruta guardada", type: "success" }));
         navigate("/routes");
       }
-    } finally {
+    }
+    finally {
       dispatch(hideLoader());
     }
   };
@@ -256,9 +227,9 @@ const CreateRoutePage = () => {
   const steps = [
     {
       title: "Identificación",
-      subtitle: "Nombre y Cliente",
+      subtitle: "Nombre de Recorrido",
       icon: <FaInfoCircle />,
-      isValid: !!title && !!selectedClientId,
+      isValid: !!title,
     },
     {
       title: "Puntos de Control",
@@ -386,22 +357,6 @@ const CreateRoutePage = () => {
                         name="title"
                         onBlur={() => {}}
                       />
-                      <ITSearchSelect
-                        label="Cliente Responsable"
-                        placeholder="Seleccionar cliente..."
-                        options={
-                          clients?.map((c: any) => ({
-                            label: c.name,
-                            value: c.id,
-                          })) || []
-                        }
-                        value={selectedClientId}
-                        onChange={(val) => {
-                          setSelectedClientId(val);
-                          setSelectedZoneId("");
-                          setAddedLocations([]);
-                        }}
-                      />
                     </div>
 
                     {isEditing && (
@@ -428,7 +383,7 @@ const CreateRoutePage = () => {
                         Validación de Seguridad
                       </h5>
                       <p className="text-[9px] text-slate-500 leading-tight font-medium">
-                        Datos filtrados por cliente.
+                        Datos del recorrido operativo para la comunidad.
                       </p>
                     </div>
                   </div>
@@ -453,7 +408,7 @@ const CreateRoutePage = () => {
                         <ITSearchSelect
                           label="Cargar Zona"
                           placeholder="Zona..."
-                          options={clientZones.map((z) => ({
+                          options={zones.map((z) => ({
                             label: z.name,
                             value: z.id,
                           }))}
@@ -555,7 +510,7 @@ const CreateRoutePage = () => {
                                     <FaCopy size={10} />
                                   </button>
                                 )}
-                                <button
+                                <ITButton
                                   onClick={() =>
                                     setAddedLocations(
                                       addedLocations.filter(
@@ -563,10 +518,12 @@ const CreateRoutePage = () => {
                                       ),
                                     )
                                   }
-                                  className="p-1.5 text-slate-300 hover:text-red-500"
+                                  variant="outlined"
+                                  color="danger"
+                                  size="small"
                                 >
                                   <FaTrash size={10} />
-                                </button>
+                                </ITButton>
                               </div>
                             </div>
 
@@ -724,17 +681,7 @@ const CreateRoutePage = () => {
                         </h2>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-                        <div className="space-y-1">
-                          <h4 className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
-                            Cliente
-                          </h4>
-                          <p className="text-base font-black text-slate-800 uppercase truncate">
-                            {clients?.find(
-                              (c) => String(c.id) === String(selectedClientId),
-                            )?.name || "N/A"}
-                          </p>
-                        </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                         <div className="space-y-1">
                           <h4 className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
                             Puntos

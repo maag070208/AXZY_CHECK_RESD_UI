@@ -30,6 +30,7 @@ export const PrivateRoutes = () => {
       }}
       sidebar={{
         navigationItems: navigationItems,
+        subitemConnector: "lines",
       }}
     >
       <Outlet />

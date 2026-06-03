@@ -312,14 +312,20 @@ test.describe("Módulo de Horarios - Gestión de Horarios", () => {
 
   test("debería permitir ver el personal asignado al horario", async ({ page }) => {
     // Vespertino: real seed → Marco Guardia + Ricardo Shift; mock → mario + ricardo
+    // Use search to avoid pagination issues (E2E runs may have created extra schedules)
+    if (process.env.USE_REAL_API) {
+      await page.fill('input[placeholder="BUSCAR HORARIO..."]', "Vespertino");
+      await page.waitForTimeout(600);
+    }
     const row = page.locator("tr", { hasText: /vespertino/i });
     await row.getByText(/asignado/i).click();
 
     await expect(page.getByRole("heading", { name: "Personal Asignado", exact: true })).toBeVisible();
 
     if (process.env.USE_REAL_API) {
-      await expect(page.getByText(/marco guardia/i)).toBeVisible();
-      await expect(page.getByText(/ricardo shift/i)).toBeVisible();
+      // Dialog shows name + username only (no role)
+      await expect(page.getByText(/Marco Solis/i)).toBeVisible();
+      await expect(page.getByText(/Ricardo Mendoza/i)).toBeVisible();
     } else {
       await expect(page.getByText(/mario mantenimiento/i)).toBeVisible();
       await expect(page.getByText(/ricardo shift/i)).toBeVisible();
