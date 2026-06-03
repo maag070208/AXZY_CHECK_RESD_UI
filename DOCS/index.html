@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CheckApp - Gestión Inteligente de Rondas y Seguridad</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="presentation/css/styles.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="container header-content">
+      <a href="#" class="brand">
+        <img src="APP/logo.png" alt="CheckApp Logo">
+        <div class="brand-name">Check<span>App</span></div>
+      </a>
+      <nav class="header-nav">
+        <a href="#beneficios" class="nav-link">Beneficios</a>
+        <a href="#modulos" class="nav-link">Módulos</a>
+        <a href="#planes" class="nav-link">Cotización</a>
+        <a href="https://cfsp.axzy.dev" target="_blank" class="nav-link active">Explorar Demo</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container hero-container">
+      <div class="hero-left">
+        <div class="hero-tag">
+          Ecosistema Operativo de Seguridad v2.0
+        </div>
+        <h1 class="hero-title">Control, Eficiencia y Rondas <span>Bajo Control</span></h1>
+        <p class="hero-subtitle">La solución de patrullaje físico definitiva. Transparencia total para tu empresa y tus clientes corporativos con tecnología de punta diseñada para operar en cualquier entorno.</p>
+        
+        <div style="display: flex; gap: 1rem; text-align: left;">
+          <a href="#modulos" class="btn-detail" style="font-weight:700; padding: 0.9rem 2rem;">Ver Módulos</a>
+          <a href="#planes" class="btn-detail" style="background:#f1f5f9; color:var(--text-primary); border: 1px solid var(--border-color); font-weight:700; padding: 0.9rem 2rem;">Cotizar</a>
+        </div>
+      </div>
+      <div class="hero-right">
+        <!-- Browser Mockup -->
+        <div class="browser-mockup">
+          <div class="browser-titlebar">
+            <div class="browser-dot red"></div>
+            <div class="browser-dot yellow"></div>
+            <div class="browser-dot green"></div>
+          </div>
+          <div class="browser-content">
+            <img src="WEB/admin/home/home_analytics.png" alt="CheckApp Analytics Dashboard">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Value Proposition / Beneficios -->
+  <section class="value-section" id="beneficios">
+    <div class="container">
+      <div class="section-header">
+        <h2>¿Qué Valor Aporta CheckApp a tu Empresa?</h2>
+        <p>Optimizamos el rendimiento de tu personal de seguridad, brindamos confianza y eliminamos bitácoras en papel.</p>
+      </div>
+
+      <div class="value-grid">
+        <div class="value-card">
+          <div class="value-icon">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          </div>
+          <h3>Transparencia para tus Clientes</h3>
+          <p>Ofrece total tranquilidad a tus clientes corporativos. Tendrán acceso a un portal exclusivo para verificar en tiempo real el cumplimiento y avance de los patrullajes contratados.</p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+          </div>
+          <h3>Cero Fraudes en Rondas</h3>
+          <p>Garantiza que tus oficiales patrullen físicamente el lugar. El sistema exige escanear códigos QR en sitio y verifica la ubicación GPS del teléfono móvil para autorizar la marcación.</p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.5"></path><path d="M5 12.5a10.94 10.94 0 0 1 5.17-2.39"></path><path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><path d="M12 20h.01"></path></svg>
+          </div>
+          <h3>Operación Continua sin Internet</h3>
+          <p>La aplicación funciona sin problemas en sótanos, estacionamientos subterráneos o zonas sin señal. El guardia registra su recorrido con normalidad y los datos se guardan para subirse al recuperar red.</p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          </div>
+          <h3>Reportes de Incidentes al Instante</h3>
+          <p>Ante cualquier desperfecto o intrusión, el sistema envía notificaciones de alerta inmediatas por correo electrónico con fotos de evidencia, notas de voz del oficial y mapa del suceso.</p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+          </div>
+          <h3>Reportes de Mantenimiento</h3>
+          <p>Registra daños de infraestructura o desperfectos hallados en el patrullaje. Adjunta evidencia multimedia georreferenciada para facilitar la resolución en la consola administrativa.</p>
+        </div>
+        <div class="value-card">
+          <div class="value-icon">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          </div>
+          <h3>Auditoría y Timeline Cronológico</h3>
+          <p>El sistema genera una línea de tiempo inalterable con cada suceso de la ronda. Visualiza la ubicación GPS, notas y archivos multimedia de forma cronológica desde la consola web.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Secciones del Sistema / Módulos -->
+  <section class="overview-section" id="modulos">
+    <div class="container">
+      <div class="section-header">
+        <h2>Conoce los Módulos del Ecosistema</h2>
+        <p>CheckApp está compuesto por cuatro interfaces diseñadas y adaptadas para cada actor de la operación de seguridad.</p>
+      </div>
+
+      <!-- Showcase Row 1: Web Admin -->
+      <div class="showcase-row">
+        <div class="showcase-info">
+          <h3>Consola Web de Administración</h3>
+          <p>El centro de control definitivo para tu operación de seguridad. Gestiona perfiles de clientes, configura rutas secuenciales de vigilancia, genera códigos QR para impresión física y visualiza métricas de cobertura y cumplimiento en tiempo real.</p>
+          <a href="presentation/sections/web-admin.html" class="btn-detail">Explorar Consola Web &rarr;</a>
+        </div>
+        <div class="showcase-media">
+          <div class="browser-mockup">
+            <div class="browser-titlebar">
+              <div class="browser-dot red"></div>
+              <div class="browser-dot yellow"></div>
+              <div class="browser-dot green"></div>
+            </div>
+            <div class="browser-content">
+              <img src="WEB/admin/home/home_detalle_operativo.png" alt="CheckApp Web Admin Panel">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Showcase Row 2: App Guardia -->
+      <div class="showcase-row reverse">
+        <div class="showcase-media">
+          <div class="phone-mockup">
+            <div class="phone-notch"></div>
+            <div class="phone-screen">
+              <img src="APP/guard/home/home_guard_screen.png" alt="CheckApp Guard App Home">
+            </div>
+          </div>
+        </div>
+        <div class="showcase-info">
+          <h3>Aplicación Móvil para Guardias</h3>
+          <p>Diseñada especialmente para los oficiales de seguridad en calle. Permite realizar marcajes mediante escáner QR físico, valida la proximidad por GPS, solicita evidencias fotográficas del punto de control y opera 100% fuera de línea en áreas sin señal celular.</p>
+          <a href="presentation/sections/app-guard.html" class="btn-detail">Explorar App de Guardia &rarr;</a>
+        </div>
+      </div>
+
+      <!-- Showcase Row 3: App Supervisor -->
+      <div class="showcase-row">
+        <div class="showcase-info">
+          <h3>Aplicación de Supervisión y Campo</h3>
+          <p>La herramienta móvil para gestores y coordinadores. Permite dar de alta clientes y puntos QR desde el celular emparejándolos en tiempo real con las coordenadas GPS en sitio, modificar cuadrantes de turnos y resolver consignas operativas inmediatas.</p>
+          <a href="presentation/sections/app-admin.html" class="btn-detail">Explorar App de Supervisor &rarr;</a>
+        </div>
+        <div class="showcase-media">
+          <div class="phone-mockup">
+            <div class="phone-notch"></div>
+            <div class="phone-screen">
+              <img src="APP/admin/home/home_admin_screen.png" alt="CheckApp Admin Mobile Panel">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Showcase Row 4: Web Cliente -->
+      <div class="showcase-row reverse">
+        <div class="showcase-media">
+          <div class="browser-mockup">
+            <div class="browser-titlebar">
+              <div class="browser-dot red"></div>
+              <div class="browser-dot yellow"></div>
+              <div class="browser-dot green"></div>
+            </div>
+            <div class="browser-content">
+              <img src="WEB/client/home/home_page.png" alt="CheckApp Client Portal">
+            </div>
+          </div>
+        </div>
+        <div class="showcase-info">
+          <h3>Portal Exclusivo para Clientes</h3>
+          <p>Proporciona transparencia y valor añadido a tus clientes corporativos contratantes. Un portal web de lectura donde pueden descargar auditorías, bitácoras de patrullajes completados y verificar la ficha del personal asignado a sus dependencias.</p>
+          <a href="presentation/sections/web-client.html" class="btn-detail">Explorar Portal de Clientes &rarr;</a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Planes Base y WhatsApp Cotizador -->
+  <section class="pricing-section" id="planes">
+    <div class="container">
+      <div class="section-header">
+        <h2>Cotización a la Medida de tu Operación</h2>
+        <p>Planes flexibles adaptados al tamaño de tu plantilla de oficiales y cantidad de servicios.</p>
+      </div>
+
+      <div class="quote-box">
+        <div class="quote-content">
+          <h3>Diseñado para Empresas de Seguridad Privada</h3>
+          <p>CheckApp se especializa en optimizar la gestión de agencias de seguridad con personal asignado a múltiples clientes y locaciones residenciales, plazas comerciales, industrias y corporativos.</p>
+          <ul class="quote-features">
+            <li>
+              <div class="quote-feature-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </div>
+              <div>
+                <strong>Desde 1 hasta más de 100 guardias:</strong> Licenciamiento flexible que escala según la cantidad activa de oficiales en campo.
+              </div>
+            </li>
+            <li>
+              <div class="quote-feature-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </div>
+              <div>
+                <strong>Múltiples clientes y locaciones:</strong> Controla de manera centralizada el patrullaje de múltiples fraccionamientos, plazas y oficinas desde una sola plataforma.
+              </div>
+            </li>
+            <li>
+              <div class="quote-feature-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </div>
+              <div>
+                <strong>Supervisión georreferenciada residencial:</strong> Verifica rondas, bitácoras digitales y escaneo de puntos de control con evidencia fotográfica directa y GPS.
+              </div>
+            </li>
+          </ul>
+        </div>
+        <div class="quote-card">
+          <div class="popular-tag">Soporte Completo</div>
+          <h4>¡Cotiza al Instante!</h4>
+          <p class="quote-card-desc">Haz clic abajo para recibir por WhatsApp una propuesta económica personalizada y adaptada exactamente a tu plantilla de guardias.</p>
+          <div class="quote-price-indicator">Cotización Flexible</div>
+          <a href="https://wa.me/526647700088?text=Hola,%20me%20gustaria%20recibir%20una%20cotizacion%20de%20CheckApp.%20Tengo%20una%20empresa%20de%20seguridad%20con%20___%20guardias%20y%20___%20clientes." class="btn-quote" target="_blank" style="margin-top: auto; display: flex; align-items: center; justify-content: center; gap: 0.5rem; text-decoration: none;">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984a9.96 9.96 0 001.37 5.029L2 22l5.186-1.359a9.929 9.929 0 004.82 1.256c5.507 0 9.99-4.478 9.99-9.985A9.997 9.997 0 0012.012 2zm5.727 14.154c-.237.667-1.379 1.288-1.921 1.343-.497.05-1.148.067-1.85-.16a10.9 10.9 0 01-3.69-2.296A11.393 11.393 0 018.06 11.23a3.524 3.524 0 01-1.009-2.527c.026-1.127.603-1.674.829-1.905.226-.231.6-.289.85-.289.25 0 .5.011.722.02.213.01.498-.08.777.592.288.694.984 2.404 1.07 2.576.084.172.14.372.026.591-.113.219-.17.382-.338.58-.169.199-.356.444-.508.596-.168.172-.345.36-.148.699.197.339.878 1.442 1.88 2.336 1.294 1.154 2.385 1.51 2.724 1.679.339.17.538.14.737-.087.199-.226.85-.989 1.076-1.328.226-.339.452-.284.762-.169.311.115 1.977.93 2.316 1.1.339.17.565.25.649.393.085.143.085.83-.152 1.497z"/></svg>
+            Cotizar por WhatsApp
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container footer-grid">
+      <div class="footer-col footer-brand">
+        <a href="#" class="brand">
+          <img src="APP/logo.png" alt="CheckApp Logo">
+          <div class="brand-name">Check<span>App</span></div>
+        </a>
+        <p style="margin-top: 1rem; font-size: 0.85rem; line-height: 1.5;">CheckApp es la plataforma integral para la gestión y control de personal de seguridad en calle, asegurando transparencia y efectividad en cada ronda.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Mapa del Sitio</h4>
+        <ul class="footer-links">
+          <li><a href="#beneficios">Beneficios</a></li>
+          <li><a href="#modulos">Módulos de Sistema</a></li>
+          <li><a href="#planes">Cotización</a></li>
+          <li><a href="presentation/sections/web-admin.html">Explorar Demo Web</a></li>
+        </ul>
+      </div>
+      <div class="footer-col footer-cta">
+        <h4>¿Listo para comenzar?</h4>
+        <p style="font-size: 0.85rem;">Contacta a uno de nuestros asesores para recibir una demo en vivo y estructurar un plan a la medida de tu operación.</p>
+        <a href="https://wa.me/526647700088?text=Hola,%20me%20gustaria%20saber%20mas%20sobre%20CheckApp%20y%20sus%20soluciones%20de%20seguridad." class="btn-whatsapp-footer" target="_blank">
+          <svg viewBox="0 0 24 24"><path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984a9.96 9.96 0 001.37 5.029L2 22l5.186-1.359a9.929 9.929 0 004.82 1.256c5.507 0 9.99-4.478 9.99-9.985A9.997 9.997 0 0012.012 2zm5.727 14.154c-.237.667-1.379 1.288-1.921 1.343-.497.05-1.148.067-1.85-.16a10.9 10.9 0 01-3.69-2.296A11.393 11.393 0 018.06 11.23a3.524 3.524 0 01-1.009-2.527c.026-1.127.603-1.674.829-1.905.226-.231.6-.289.85-.289.25 0 .5.011.722.02.213.01.498-.08.777.592.288.694.984 2.404 1.07 2.576.084.172.14.372.026.591-.113.219-.17.382-.338.58-.169.199-.356.444-.508.596-.168.172-.345.36-.148.699.197.339.878 1.442 1.88 2.336 1.294 1.154 2.385 1.51 2.724 1.679.339.17.538.14.737-.087.199-.226.85-.989 1.076-1.328.226-.339.452-.284.762-.169.311.115 1.977.93 2.316 1.1.339.17.565.25.649.393.085.143.085.83-.152 1.497z"/></svg>
+          Chatear por WhatsApp
+        </a>
+      </div>
+    </div>
+
+    <!-- Alianza de Desarrollo Compacta -->
+    <div class="footer-developer-compact container">
+      <!-- Badge axzydev -->
+      <div class="dev-compact-badge">
+        <div class="dev-compact-avatar axzy">A</div>
+        <div class="dev-compact-info">
+          <span class="dev-compact-title">axzydev</span>
+          <span class="dev-compact-role-pill">Fullstack Developer</span>
+        </div>
+        <div class="dev-compact-actions">
+          <a href="https://axzy.dev" target="_blank" class="dev-action-btn" title="Sitio Web">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+          </a>
+          <a href="mailto:aamaro@axzy.dev" class="dev-action-btn" title="Correo Electrónico">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- Badge ISST -->
+      <div class="dev-compact-badge">
+        <div class="dev-compact-avatar isst">I</div>
+        <div class="dev-compact-info">
+          <span class="dev-compact-title">ISST</span>
+          <span class="dev-compact-role-pill">Soluciones Empresariales</span>
+        </div>
+        <div class="dev-compact-actions">
+          <a href="https://isstech.mx" target="_blank" class="dev-action-btn" title="Sitio Web">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+          </a>
+          <a href="mailto:ingenieria@isst.mx" class="dev-action-btn" title="Correo Electrónico">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="container footer-bottom">
+      <p>© 2026 AXZY Security Suite. Todos los derechos reservados. Confidencial.</p>
+      <p>Desarrollado con estándares premium por axzydev & ISST</p>
+    </div>
+  </footer>
+
+</body>
+</html>
