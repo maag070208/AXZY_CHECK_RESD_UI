@@ -27,7 +27,6 @@ const BulkAssignFeeDialog = ({ isOpen, onClose, onSuccess }: Props) => {
   const [originalIds, setOriginalIds] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [loadingAssignments, setLoadingAssignments] = useState(false);
   const loadingFeeRef = useRef("");
 
   const fetchResidents = useCallback(async (search: string) => {
@@ -54,10 +53,8 @@ const BulkAssignFeeDialog = ({ isOpen, onClose, onSuccess }: Props) => {
 
   const loadAssignments = useCallback(async (feeId: string) => {
     loadingFeeRef.current = feeId;
-    setLoadingAssignments(true);
     const res = await getResidentFeesByFeeId(feeId);
     if (loadingFeeRef.current !== feeId) {
-      setLoadingAssignments(false);
       return;
     }
     const ids = new Set<string>();
@@ -68,7 +65,6 @@ const BulkAssignFeeDialog = ({ isOpen, onClose, onSuccess }: Props) => {
     }
     setSelectedIds(ids);
     setOriginalIds(new Set(ids));
-    setLoadingAssignments(false);
   }, []);
 
   useEffect(() => {

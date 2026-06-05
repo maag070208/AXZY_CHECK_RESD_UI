@@ -160,8 +160,12 @@ export const deletePayment = async (id: string): Promise<TResult<PaymentResponse
   return await remove<PaymentResponse>(`/payments/${id}`);
 };
 
-export const createPaymentCheckout = async (paymentId: string): Promise<TResult<{ url: string }>> => {
-  return await post<{ url: string }>(`/payments/${paymentId}/checkout`, {});
+export const createPaymentCheckout = async (paymentId: string): Promise<TResult<{ url: string; sessionId: string }>> => {
+  return await post<{ url: string; sessionId: string }>(`/payments/${paymentId}/checkout`, {});
+};
+
+export const verifyPaymentSession = async (sessionId: string): Promise<TResult<PaymentResponse>> => {
+  return await post<PaymentResponse>(`/payments/session/${sessionId}/verify`, {});
 };
 
 export const downloadReceipt = async (paymentId: string): Promise<void> => {

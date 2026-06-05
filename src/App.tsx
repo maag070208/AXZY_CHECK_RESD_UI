@@ -35,33 +35,19 @@ import ReportsPage from "./modules/reports/pages/ReportsPage";
 
 
 function App() {
-  const token = useSelector((state: any) => state.auth.token);
+  const token = useSelector((state: { auth: { token: string | null } }) => state.auth.token);
+  const loading = useSelector((state: { loader: { loading: boolean } }) => state.loader.loading);
   const dispatch = useDispatch();
 
   const [isAppReady, setIsAppReady] = useState(false);
 
   useEffect(() => {
-    window.addEventListener("beforeunload", () => {});
-    window.addEventListener("unload", handleTabClosing);
-    return () => {
-      window.removeEventListener("beforeunload", () => {});
-      window.removeEventListener("unload", handleTabClosing);
-    };
-  });
-
-  const handleTabClosing = () => {
-    localStorage.setItem("token", token);
-  };
-
-  useEffect(() => {
     const storedToken = localStorage.getItem("token");
-    if (storedToken && storedToken !== "null") {
+    if (storedToken && storedToken !== "null" && storedToken !== "undefined") {
       dispatch(setAuth(storedToken));
     }
     setIsAppReady(true);
   }, [dispatch]);
-
-  const loading = useSelector((state: any) => state.loader.loading);
 
   if (!isAppReady) {
     return (
@@ -88,7 +74,7 @@ function App() {
         <Route element={<PrivateRoutes />}>
           <Route path="/home" element={<HomePage />} />
           <Route path="/guards" element={<GuardsPage />} />
-          
+
           <Route path="/locations" element={<LocationsPage />} />
           <Route path="/residents" element={<ResidentsPage />} />
           <Route path="/residents/:id" element={<ResidentDetailPage />} />
@@ -107,7 +93,7 @@ function App() {
           <Route path="/maintenances" element={<MaintenancesPage />} />
           <Route path="/kardex" element={<KardexPage />} />
           <Route path="/schedules" element={<SchedulesPage />} />
-          
+
           <Route path="/rounds" element={<RoundsPage />} />
           <Route path="/rounds/:id" element={<RoundDetailPage />} />
           <Route path="/settings" element={<SettingsPage />} />
@@ -117,7 +103,6 @@ function App() {
         <Route path="*" element={<Navigate to="/home" />} />
       </Routes>
 
-      {/* GLOBAL MODAL ACTION LOADER */}
       {loading && (
         <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-slate-900/20 backdrop-blur-[2px] transition-all">
           <div className="bg-white p-10 rounded-[32px] shadow-2xl border border-slate-100 flex flex-col items-center gap-6">

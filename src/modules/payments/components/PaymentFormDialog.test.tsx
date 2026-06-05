@@ -5,14 +5,17 @@ import { PaymentFormDialog } from "./PaymentFormDialog";
 import * as PaymentsService from "../services/PaymentsService";
 import * as ResidentsService from "@app/modules/residents/services/ResidentsService";
 
-const mockFees = [
-  { id: "fee-1", name: "Mantenimiento", amount: 500, type: "MONTHLY", dueDate: "2026-07-01", active: true, description: null, createdAt: "", updatedAt: "", deletedAt: null },
-  { id: "fee-2", name: "Cuota Anual", amount: 1000, type: "ONE_TIME", dueDate: "2026-12-31", active: true, description: null, createdAt: "", updatedAt: "", deletedAt: null },
+import type { FeeResponse } from "@app/modules/payments/services/PaymentsService";
+import type { ResidentResponse } from "@app/modules/residents/services/ResidentsService";
+
+const mockFees: FeeResponse[] = [
+  { id: "fee-1", name: "Mantenimiento", amount: 500, type: "MONTHLY", dueDate: "2026-07-01", active: true, description: null, createdAt: "", updatedAt: "", deletedAt: null } as unknown as FeeResponse,
+  { id: "fee-2", name: "Cuota Anual", amount: 1000, type: "ONE_TIME", dueDate: "2026-12-31", active: true, description: null, createdAt: "", updatedAt: "", deletedAt: null } as unknown as FeeResponse,
 ];
 
-const mockResidents = [
-  { id: "res-1", phone: "555-0101", house: { street: "Principal", number: "123" }, user: { id: "user-1", name: "Juan", lastName: "Perez" } },
-  { id: "res-2", phone: "555-0202", house: { street: "Roble", number: "45" }, user: { id: "user-2", name: "Maria", lastName: "Lopez" } },
+const mockResidents: ResidentResponse[] = [
+  { id: "res-1", userId: "user-1", houseId: "h-1", phone: "555-0101", email: null, isOwner: true, active: true, notes: null, createdAt: "", updatedAt: "", deletedAt: null, house: { street: "Principal", number: "123" } as any, user: { id: "user-1", name: "Juan", lastName: "Perez", username: "juan", active: true } as any } as unknown as ResidentResponse,
+  { id: "res-2", userId: "user-2", houseId: "h-2", phone: "555-0202", email: null, isOwner: true, active: true, notes: null, createdAt: "", updatedAt: "", deletedAt: null, house: { street: "Roble", number: "45" } as any, user: { id: "user-2", name: "Maria", lastName: "Lopez", username: "maria", active: true } as any } as unknown as ResidentResponse,
 ];
 
 vi.mock("../services/PaymentsService", () => ({
@@ -44,9 +47,9 @@ describe("PaymentFormDialog", () => {
       messages: [],
     });
     vi.mocked(ResidentsService.getPaginatedResidents).mockResolvedValue({
-      success: true,
       data: mockResidents,
-    });
+      total: mockResidents.length,
+    } as any);
     vi.mocked(PaymentsService.createPayment).mockResolvedValue({
       success: true,
       data: { id: "pay-new" } as any,

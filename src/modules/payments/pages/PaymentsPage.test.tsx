@@ -3,10 +3,11 @@ import { describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import PaymentsPage from "./PaymentsPage";
 import * as PaymentsService from "../services/PaymentsService";
+import type { PaymentResponse } from "../services/PaymentsService";
 import * as ResidentsService from "@app/modules/residents/services/ResidentsService";
 import { useSelector } from "react-redux";
 
-const mockPayments = {
+const mockPayments: { rows: PaymentResponse[]; total: number } = {
   rows: [
     {
       id: "pay-1",
@@ -15,6 +16,10 @@ const mockPayments = {
       amount: 500,
       reference: null,
       status: "PENDING",
+      period: null,
+      stripePaymentIntentId: null,
+      stripeInvoiceId: null,
+      s3ReceiptUrl: null,
       paidAt: null,
       createdAt: "2026-06-01T12:00:00.000Z",
       updatedAt: "2026-06-01T12:00:00.000Z",
@@ -29,6 +34,10 @@ const mockPayments = {
       amount: 1000,
       reference: "stripe_123",
       status: "PAID",
+      period: null,
+      stripePaymentIntentId: "pi_123",
+      stripeInvoiceId: "in_123",
+      s3ReceiptUrl: null,
       paidAt: "2026-06-02T12:00:00.000Z",
       createdAt: "2026-06-01T12:00:00.000Z",
       updatedAt: "2026-06-02T12:00:00.000Z",
@@ -36,7 +45,7 @@ const mockPayments = {
       resident: { id: "res-2", phone: "555-0202", user: { id: "user-2", name: "Maria", lastName: "Lopez" } },
       fee: { id: "fee-2", name: "Cuota Anual", amount: 1000 },
     },
-  ],
+  ] as unknown as PaymentResponse[],
   total: 2,
 };
 
@@ -96,9 +105,9 @@ describe("PaymentsPage", () => {
       messages: [],
     });
     vi.mocked(ResidentsService.getPaginatedResidents).mockResolvedValue({
-      success: true,
       data: [],
-    });
+      total: 0,
+    } as any);
   });
 
   it("debe renderizar el encabezado y las tarjetas de resumen", async () => {

@@ -1,9 +1,9 @@
 import { ITBadget, ITButton, ITText } from "@axzydev/axzy_ui_system";
 import dayjs from "dayjs";
-import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { FaFileDownload, FaArrowLeft, FaStripe } from "react-icons/fa";
-import { getPaymentById, PaymentResponse } from "../services/PaymentsService";
+import { getPaymentById, verifyPaymentSession, PaymentResponse } from "../services/PaymentsService";
 
 const statusConfig = {
   PAID: { label: "PAGADO", color: "success" as const },
@@ -14,17 +14,39 @@ const statusConfig = {
 
 const PaymentReceiptPage = () => {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [payment, setPayment] = useState<PaymentResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const sessionVerifyAttempted = useRef(false);
 
   useEffect(() => {
     if (!id) return;
-    loadPayment();
+
+    const sessionId = searchParams.get("session_id");
+    if (sessionId && !sessionVerifyAttempted.current) {
+      sessionVerifyAttempted.current = true;
+      verifyFromStripe(sessionId);
+    } else {
+      loadPayment();
+    }
+
     const interval = setInterval(loadPayment, 5000);
     return () => clearInterval(interval);
-  }, [id]);
+  }, [id, searchParams]);
+
+  const verifyFromStripe = async (sessionId: string) => {
+    if (!id) return;
+    setLoading(true);
+    const res = await verifyPaymentSession(sessionId);
+    if (res.success && res.data) {
+      setPayment(res.data);
+      setLoading(res.data.status !== "PAID");
+    } else {
+      loadPayment();
+    }
+  };
 
   const loadPayment = async () => {
     if (!id) return;

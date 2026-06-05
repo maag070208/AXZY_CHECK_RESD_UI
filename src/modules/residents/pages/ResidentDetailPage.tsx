@@ -1336,8 +1336,6 @@ export const ResidentDetailPage: React.FC = () => {
                             const monthlyPays = payments.filter(
                               (p) => p.feeId === rf.feeId && p.fee?.type === "MONTHLY"
                             );
-                            const latestPay = monthlyPays[0];
-
                             return (
                               <div
                                 key={rf.id}

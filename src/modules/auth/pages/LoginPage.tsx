@@ -33,6 +33,7 @@ const LoginPage = () => {
         return;
       }
 
+      localStorage.setItem("token", response.data);
       dispatch(setAuth(response.data));
       navigate("/home");
     } catch (error) {

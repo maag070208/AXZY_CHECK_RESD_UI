@@ -1,5 +1,5 @@
 import { AppState } from "@app/core/store/store";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactElement } from "react";
 import {
   FaBook,
   FaBuilding,
@@ -108,7 +108,7 @@ const HomePage = () => {
     const allCards: Array<{
       title: string;
       description: string;
-      icon: JSX.Element;
+      icon: ReactElement;
       action: () => void;
       roles: string[];
       accent: ThemeColor;
@@ -141,11 +141,13 @@ const HomePage = () => {
   }, [loadDashboard, paymentDateRange]);
 
   const tabs = useMemo(() => {
-    const items = [{ key: "nav" as const, label: "Módulos", icon: <FaThLarge /> }];
+    const items: Array<{ key: "nav" | "analytics" | "detail"; label: string; icon: ReactElement }> = [
+      { key: "nav", label: "Módulos", icon: <FaThLarge /> },
+    ];
     if (canViewMetrics) {
       items.push(
-        { key: "analytics" as const, label: "Security Analytics", icon: <FaChartBar /> },
-        { key: "detail" as const, label: "Detalle Operativo", icon: <FaTable /> },
+        { key: "analytics", label: "Security Analytics", icon: <FaChartBar /> },
+        { key: "detail", label: "Detalle Operativo", icon: <FaTable /> },
       );
     }
     return items;
