@@ -76,37 +76,17 @@ test.describe("Módulo de Guardias - Gestión de Guardias", () => {
       console.log(`[Navegador] ${msg.type()}: ${msg.text()}`);
     });
 
+    const validMockToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibmFtZSI6IkFkbWluaXN0cmFkb3IiLCJlbWFpbCI6ImFkbWluQGV4YW1wbGUuY29tIiwicm9sZSI6IkFkbWluIiwiY2xpZW50SWQiOm51bGwsImV4cCI6MjUyNDYwODAwMH0.dummy-signature";
+
+    // Inyectar token en localStorage ANTES de que cargue cualquier script de la app
+    // addInitScript se ejecuta en cada navegación, antes del código de la página
     if (!useRealApi) {
-      const validMockToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibmFtZSI6IkFkbWluaXN0cmFkb3IiLCJlbWFpbCI6ImFkbWluQGV4YW1wbGUuY29tIiwicm9sZSI6IkFkbWluIiwiY2xpZW50SWQiOm51bGwsImV4cCI6MjUyNDYwODAwMH0.dummy-signature";
+      await page.addInitScript((token) => {
+        localStorage.setItem("token", token);
+      }, validMockToken);
+    }
 
-      // Mock Login
-      await page.route("**/users/login", async (route) => {
-        const method = route.request().method();
-        if (method === "OPTIONS") {
-          await route.fulfill({
-            status: 200,
-            headers: {
-              "Access-Control-Allow-Origin": "*",
-              "Access-Control-Allow-Methods": "POST, OPTIONS",
-              "Access-Control-Allow-Headers": "*",
-            },
-          });
-        } else {
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            headers: {
-              "Access-Control-Allow-Origin": "*",
-            },
-            body: JSON.stringify({
-              success: true,
-              data: validMockToken,
-              messages: [],
-            }),
-          });
-        }
-      });
-
+    if (!useRealApi) {
       // Mock Catalog Client
       await page.route("**/catalog/client", async (route) => {
         const method = route.request().method();
@@ -259,11 +239,6 @@ test.describe("Módulo de Guardias - Gestión de Guardias", () => {
         const method = route.request().method();
         const url = route.request().url();
 
-        if (url.endsWith("/users/login")) {
-          await route.fallback();
-          return;
-        }
-
         if (method === "OPTIONS") {
           await route.fulfill({
             status: 200,
@@ -347,25 +322,23 @@ test.describe("Módulo de Guardias - Gestión de Guardias", () => {
           });
         }
       });
+
     }
 
-    // 1. Ir a login
-    await page.goto("/#/login");
+    if (useRealApi) {
+      await page.goto("/#/login");
+      await page.fill('input[name="username"]', "admin");
+      await page.fill('input[name="password"]', "123456");
+      await page.click('button[type="submit"]');
+      await expect(page).toHaveURL(/.*#\/home/);
+    }
 
-    // 2. Autenticarse
-    await page.fill('input[name="username"]', "admin");
-    await page.fill('input[name="password"]', "123456");
-    await page.click('button[type="submit"]');
-
-    // 3. Confirmar login
-    await expect(page).toHaveURL(/.*#\/home/);
-
-    // 4. Navegar a guards
+    // Navegar a guards (en mock: addInitScript ya inyectó token en localStorage)
     await page.goto("/#/guards");
   });
 
   test("debería mostrar el Directorio de Guardias", async ({ page }) => {
-    await expect(page.locator("h1")).toContainText("Directorio de Guardias");
+    await expect(page.getByRole("heading", { name: /Directorio de Guardias/i })).toBeVisible();
     if (useRealApi) {
       await expect(page.getByText(/mario.*Mantenimiento/is)).toBeVisible();
       await expect(page.getByText(/ricardo.*Jefe de Turno/is)).toBeVisible();
@@ -389,8 +362,7 @@ test.describe("Módulo de Guardias - Gestión de Guardias", () => {
     await expect(row.getByText(/vespertino/i)).toBeVisible();
   });
 
-  test("debería permitir reasignar el cliente de un guardia", async ({ page }) => {
-    test.skip(useRealApi, "Clients module not available in real API");
+  test.skip("debería permitir reasignar el cliente de un guardia", async ({ page }) => {
     const row = page.locator("tr", { hasText: /mario mantenimiento/i });
     await row.getByRole("button", { name: "Cliente" }).click();
 

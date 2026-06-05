@@ -1,0 +1,1912 @@
+[
+  {
+    "id": "TC001",
+    "title": "Admin can sign in and reach the protected dashboard",
+    "description": "Verifies that a valid admin login creates an authenticated session and lands the user on the main dashboard with protected content visible.",
+    "category": "Autenticación y control de acceso",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the protected dashboard is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the main daily summary content is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC002",
+    "title": "View the home dashboard after signing in",
+    "description": "This verifies that a signed-in admin lands on the home dashboard and can see the daily overview needed to start work.",
+    "category": "Incidencias y notificaciones",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials with {{LOGIN_USER}} and {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the home dashboard is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the daily summary cards are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC003",
+    "title": "Protected pages stay available after reloading the app",
+    "description": "Verifies that the authenticated session persists across a page reload and the user remains on the dashboard.",
+    "category": "Autenticación y control de acceso",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Reload the current page"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the protected dashboard is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user remains signed in"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC004",
+    "title": "Invalid login keeps the user on the sign-in page",
+    "description": "Verifies that incorrect credentials are rejected and the user remains on the sign-in screen with an error state.",
+    "category": "Autenticación y control de acceso",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with invalid-user"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with invalid-password"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the sign-in page remains visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a login error message is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC005",
+    "title": "Signed-in user can log out and return to the sign-in page",
+    "description": "Verifies that logging out clears the authenticated session and redirects the user back to the sign-in screen.",
+    "category": "Autenticación y control de acceso",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the user account menu"
+      },
+      {
+        "type": "action",
+        "description": "Sign out of the application"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the sign-in page is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify protected dashboard content is no longer visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC006",
+    "title": "Review the resident list",
+    "description": "This verifies that an admin can open the resident management view and see existing resident records.",
+    "category": "Residentes y casas/properties",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials with {{LOGIN_USER}} and {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to the residents section"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the resident list is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify resident detail links are available"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC007",
+    "title": "Record a resident payment and review the summary",
+    "description": "This verifies that an admin can create a payment and then see the updated payment history and summary cards.",
+    "category": "Cuotas y pagos",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials with {{LOGIN_USER}} and {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to the payments section"
+      },
+      {
+        "type": "action",
+        "description": "Open the payment creation form"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the payment details with valid values"
+      },
+      {
+        "type": "action",
+        "description": "Submit the payment form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new payment appears in the payment history"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the payment summary cards are updated"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC008",
+    "title": "Expired or missing session returns the user to sign-in",
+    "description": "Verifies that accessing a protected area without a valid session forces the user back to the sign-in page.",
+    "category": "Autenticación y control de acceso",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Sign out of the application"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to open a protected area from the app shell"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the sign-in page is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify access to protected content is blocked"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC009",
+    "title": "Admin sees the dashboard summary after signing in",
+    "description": "Verifies that the dashboard loads the main operational summary cards and recent activity for a signed-in user.",
+    "category": "Panel principal y métricas operativas",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the dashboard summary cards are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify recent activity content is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC010",
+    "title": "Create a fee template",
+    "description": "This verifies that an admin can create a one-time or monthly fee template and make it available for future assignment.",
+    "category": "Cuotas y pagos",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials with {{LOGIN_USER}} and {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to the payments section"
+      },
+      {
+        "type": "action",
+        "description": "Open the fee creation form"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the fee details with valid values"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid fee type"
+      },
+      {
+        "type": "action",
+        "description": "Submit the fee form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new fee template is displayed in the fee list"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC011",
+    "title": "Create a resident linked to a house",
+    "description": "This verifies that an admin can create a resident record tied to an existing house and see it appear in the resident table.",
+    "category": "Residentes y casas/properties",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials with {{LOGIN_USER}} and {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to the residents section"
+      },
+      {
+        "type": "action",
+        "description": "Open the resident creation form"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the resident details with valid values"
+      },
+      {
+        "type": "action",
+        "description": "Select an existing house for the resident"
+      },
+      {
+        "type": "action",
+        "description": "Submit the resident form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new resident appears in the resident list"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC012",
+    "title": "Admin can view the filtered users list",
+    "description": "Verifies that the users table loads and shows the expected filtered list for an authenticated admin.",
+    "category": "Usuarios y roles",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the users module"
+      },
+      {
+        "type": "action",
+        "description": "Apply a role and active-status filter"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the filtered user list is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user rows are shown in the table"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC013",
+    "title": "Review the incidents board",
+    "description": "This verifies that a supervisor can open the incidents board and see incident rows for operational tracking.",
+    "category": "Incidencias y notificaciones",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials with {{LOGIN_USER}} and {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to the incidents section"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the incidents board is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify incident rows are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC014",
+    "title": "Deactivate a resident and linked user",
+    "description": "This verifies that an admin can delete a resident and that the linked account is deactivated as part of the same workflow.",
+    "category": "Residentes y casas/properties",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials with {{LOGIN_USER}} and {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to the residents section"
+      },
+      {
+        "type": "action",
+        "description": "Create a resident with a linked account if none exists"
+      },
+      {
+        "type": "action",
+        "description": "Open that resident record"
+      },
+      {
+        "type": "action",
+        "description": "Delete the resident"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the resident is removed from the active resident view"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the linked account is shown as deactivated"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC015",
+    "title": "Create a temporary access pass",
+    "description": "Verifies that a user can create a temporary visitor pass and see it appear in the access list with a pending state.",
+    "category": "Accesos y pases",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for the access management role"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the access passes section"
+      },
+      {
+        "type": "action",
+        "description": "Start creating a new temporary pass"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the required visitor and visit window details"
+      },
+      {
+        "type": "action",
+        "description": "Submit the pass creation form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new access pass is shown in the list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the pass is shown with a pending state"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC016",
+    "title": "Create a new client",
+    "description": "The administrator can create a client with valid details and see it appear in the client list.",
+    "category": "Clientes, zonas, ubicaciones y configuración",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the client management page"
+      },
+      {
+        "type": "action",
+        "description": "Start creating a new client"
+      },
+      {
+        "type": "action",
+        "description": "Fill in valid client details"
+      },
+      {
+        "type": "action",
+        "description": "Submit the client form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new client appears in the client list"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC017",
+    "title": "Create an incident and see it in the list",
+    "description": "This verifies that a supervisor can create a new incident and see it appear immediately in the incidents list.",
+    "category": "Incidencias y notificaciones",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials with {{LOGIN_USER}} and {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to the incidents section"
+      },
+      {
+        "type": "action",
+        "description": "Open the incident creation form"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the incident details with valid values"
+      },
+      {
+        "type": "action",
+        "description": "Submit the incident form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new incident appears in the incidents list"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC018",
+    "title": "Admin can open a user detail record",
+    "description": "Verifies that selecting a user opens the user detail view with record information available for review or editing.",
+    "category": "Usuarios y roles",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the users module"
+      },
+      {
+        "type": "action",
+        "description": "Open a user record from the list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user detail view is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user information is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC019",
+    "title": "Update resident details",
+    "description": "This verifies that an admin can edit an existing resident and see the updated information reflected in the resident detail view.",
+    "category": "Residentes y casas/properties",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials with {{LOGIN_USER}} and {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to the residents section"
+      },
+      {
+        "type": "action",
+        "description": "Open an existing resident record"
+      },
+      {
+        "type": "action",
+        "description": "Open the resident edit form"
+      },
+      {
+        "type": "action",
+        "description": "Update the resident details with valid values"
+      },
+      {
+        "type": "action",
+        "description": "Submit the resident form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the resident detail view shows the updated information"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC020",
+    "title": "View the client list",
+    "description": "The administrator can open the base entity area and see the residential complex list displayed.",
+    "category": "Clientes, zonas, ubicaciones y configuración",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the client management page"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the client list is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC021",
+    "title": "Bulk assign a fee to multiple residents",
+    "description": "This verifies that an admin can assign a fee template to several residents in one workflow and see the new assignments created.",
+    "category": "Cuotas y pagos",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials with {{LOGIN_USER}} and {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to the payments section"
+      },
+      {
+        "type": "action",
+        "description": "Open the bulk fee assignment dialog"
+      },
+      {
+        "type": "action",
+        "description": "Select a fee template"
+      },
+      {
+        "type": "action",
+        "description": "Select multiple residents"
+      },
+      {
+        "type": "action",
+        "description": "Submit the bulk assignment"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify multiple resident-fee assignments are created"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC022",
+    "title": "Mark an incident as attended",
+    "description": "This verifies that a supervisor can change an incident status to attended and see it move to the attended list.",
+    "category": "Incidencias y notificaciones",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials with {{LOGIN_USER}} and {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to the incidents section"
+      },
+      {
+        "type": "action",
+        "description": "Open an incident that is not attended"
+      },
+      {
+        "type": "action",
+        "description": "Change the incident status to attended"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the incident is shown as attended"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the incident appears in the attended list"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC023",
+    "title": "View the properties list",
+    "description": "This verifies that an admin can open the properties view and review house records used for resident assignments.",
+    "category": "Residentes y casas/properties",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials with {{LOGIN_USER}} and {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to the properties section"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the properties list is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify house records are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC024",
+    "title": "Advance an access pass after the first gate scan",
+    "description": "Verifies that a pending access pass can be updated to active after the first gate scan is recorded.",
+    "category": "Accesos y pases",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for the access management role"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the access passes section"
+      },
+      {
+        "type": "action",
+        "description": "Open an access pass that was created earlier in the test"
+      },
+      {
+        "type": "action",
+        "description": "Record the first gate scan for the pass"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the pass detail shows an updated active state"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the scan is added to the pass history"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC025",
+    "title": "Delete a client",
+    "description": "The administrator can remove a client and see it no longer listed while history is preserved.",
+    "category": "Clientes, zonas, ubicaciones y configuración",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the client management page"
+      },
+      {
+        "type": "action",
+        "description": "Create a new client"
+      },
+      {
+        "type": "action",
+        "description": "Delete the newly created client"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the client is no longer listed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC026",
+    "title": "Open incident details and timeline",
+    "description": "This verifies that a supervisor can open an incident detail view and review its timeline information.",
+    "category": "Incidencias y notificaciones",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials with {{LOGIN_USER}} and {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to the incidents section"
+      },
+      {
+        "type": "action",
+        "description": "Open an existing incident record"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the incident detail view is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the incident timeline is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC027",
+    "title": "Create a recurring fee without a due date",
+    "description": "This verifies that an admin can create a monthly fee template without a due date and see it saved successfully.",
+    "category": "Cuotas y pagos",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials with {{LOGIN_USER}} and {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to the payments section"
+      },
+      {
+        "type": "action",
+        "description": "Open the fee creation form"
+      },
+      {
+        "type": "action",
+        "description": "Select a monthly fee type"
+      },
+      {
+        "type": "action",
+        "description": "Leave the due date empty"
+      },
+      {
+        "type": "action",
+        "description": "Submit the fee form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the recurring fee template is displayed in the fee list"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC028",
+    "title": "View today's rounds and open a round detail",
+    "description": "Verifies that a user can see the rounds list and open a round to review its checkpoints and scan timeline.",
+    "category": "Rondas, ubicaciones y escaneo",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for the rounds management role"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the rounds section"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify today's rounds are displayed"
+      },
+      {
+        "type": "action",
+        "description": "Open an existing round from the list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the round detail view is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify scanned locations or checkpoints are shown"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC029",
+    "title": "Download a payment receipt",
+    "description": "This verifies that an admin can open a payment record and download its PDF receipt from the payments view.",
+    "category": "Cuotas y pagos",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials with {{LOGIN_USER}} and {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to the payments section"
+      },
+      {
+        "type": "action",
+        "description": "Open an existing payment record"
+      },
+      {
+        "type": "action",
+        "description": "Download the receipt for the payment"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the receipt download is initiated"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC030",
+    "title": "Create a new round for guard operations",
+    "description": "Verifies that a user can create a round and see it appear in the rounds list.",
+    "category": "Rondas, ubicaciones y escaneo",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for the rounds management role"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the rounds section"
+      },
+      {
+        "type": "action",
+        "description": "Start creating a new round"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the required round details"
+      },
+      {
+        "type": "action",
+        "description": "Submit the round creation form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new round appears in the rounds list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the round has a visible initial status"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC031",
+    "title": "View zones for a client",
+    "description": "The administrator can open a client and see the associated zones displayed for that client.",
+    "category": "Clientes, zonas, ubicaciones y configuración",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the client management page"
+      },
+      {
+        "type": "action",
+        "description": "Open a client"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the zone list for the selected client is displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC032",
+    "title": "Review operational metrics on the home dashboard",
+    "description": "This verifies that a signed-in user can inspect the dashboard analytics content after landing on home.",
+    "category": "Incidencias y notificaciones",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials with {{LOGIN_USER}} and {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the home dashboard is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify operational metrics are displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC033",
+    "title": "Filter access passes by status and type",
+    "description": "Verifies that a user can review access passes using status and type filters and see the list update accordingly.",
+    "category": "Accesos y pases",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for the access management role"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the access passes section"
+      },
+      {
+        "type": "action",
+        "description": "Select a pass status filter"
+      },
+      {
+        "type": "action",
+        "description": "Select an access type filter"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the access list is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the list reflects the selected filters"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC034",
+    "title": "Record a location scan in a round",
+    "description": "Verifies that scanning a valid location adds a checkpoint to the round timeline.",
+    "category": "Rondas, ubicaciones y escaneo",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for the rounds management role"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the rounds section"
+      },
+      {
+        "type": "action",
+        "description": "Open a round that is ready for scanning"
+      },
+      {
+        "type": "action",
+        "description": "Record a valid location scan"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the scan appears in the round timeline"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the round shows an updated scan count or progress"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC035",
+    "title": "Convert a round finding into a maintenance assignment",
+    "description": "Verifies that a user can create a maintenance assignment from a round finding and see it in pending state.",
+    "category": "Asignaciones y mantenimiento",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for the maintenance role"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the rounds or maintenance workflow"
+      },
+      {
+        "type": "action",
+        "description": "Open a round finding that needs follow-up"
+      },
+      {
+        "type": "action",
+        "description": "Start creating a maintenance assignment from the finding"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the required assignment details"
+      },
+      {
+        "type": "action",
+        "description": "Submit the assignment form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new assignment is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the assignment is shown in pending state"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC036",
+    "title": "View locations for route and round setup",
+    "description": "The administrator can open the locations area and see the available locations used for route and round setup.",
+    "category": "Clientes, zonas, ubicaciones y configuración",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the locations management page"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the location list is displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC037",
+    "title": "Admin can switch to the analytics view from the dashboard",
+    "description": "Verifies that the dashboard analytics view can be opened and shows chart-based operational insights.",
+    "category": "Panel principal y métricas operativas",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the analytics view from the dashboard"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify analytics content is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a chart-based operational view is visible"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC038",
+    "title": "Filter the payment history",
+    "description": "This verifies that an admin can search the payment list using resident, status, period, or fee filters and see matching rows only.",
+    "category": "Cuotas y pagos",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials with {{LOGIN_USER}} and {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to the payments section"
+      },
+      {
+        "type": "action",
+        "description": "Apply payment history filters with valid values"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the payment history is filtered to matching records"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC039",
+    "title": "Create an inventory movement",
+    "description": "As an admin, creating a new inventory movement should add the movement and refresh the inventory totals.",
+    "category": "Kardex e inventario",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the login page"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the inventory section link"
+      },
+      {
+        "type": "action",
+        "description": "Start creating a new inventory movement"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the movement form with valid data"
+      },
+      {
+        "type": "action",
+        "description": "Submit the inventory movement form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new movement is shown in the inventory history"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the inventory totals are updated"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC040",
+    "title": "Create a work schedule",
+    "description": "As an operations user, creating a new work schedule should save it and make it available in the schedules list.",
+    "category": "Horarios y configuración operativa",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the login page"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the schedules section link"
+      },
+      {
+        "type": "action",
+        "description": "Start creating a new work schedule"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the schedule form with valid data"
+      },
+      {
+        "type": "action",
+        "description": "Submit the schedule form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new schedule appears in the schedules list"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC041",
+    "title": "See validation when incident fields are missing",
+    "description": "This verifies that the incident form stays open and shows validation messages when required fields are omitted.",
+    "category": "Incidencias y notificaciones",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials with {{LOGIN_USER}} and {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to the incidents section"
+      },
+      {
+        "type": "action",
+        "description": "Open the incident creation form"
+      },
+      {
+        "type": "action",
+        "description": "Submit the incident form without required details"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify validation errors are visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the incident form remains open"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC042",
+    "title": "View inventory movements",
+    "description": "As an admin, viewing the inventory history should show recorded kardex movements in the table.",
+    "category": "Kardex e inventario",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the login page"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the inventory section link"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify inventory movement rows are displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC043",
+    "title": "Complete or expire an access pass after its visit window",
+    "description": "Verifies that an access pass can move out of pending or active status once the visit window has ended.",
+    "category": "Accesos y pases",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for the access management role"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the access passes section"
+      },
+      {
+        "type": "action",
+        "description": "Open an access pass whose visit window has already ended"
+      },
+      {
+        "type": "action",
+        "description": "Refresh or revisit the pass detail after the window end is applied"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the pass shows a finished or expired state"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the access history reflects the final state"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC044",
+    "title": "View work schedules",
+    "description": "As an operations user, opening the schedules section should show the configured shift schedules.",
+    "category": "Horarios y configuración operativa",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the login page"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the schedules section link"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify schedule rows are displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC045",
+    "title": "Update maintenance progress through review states",
+    "description": "Verifies that a maintenance assignment can move through checking, under review, and final review states.",
+    "category": "Asignaciones y mantenimiento",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for the maintenance role"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the maintenance section"
+      },
+      {
+        "type": "action",
+        "description": "Open an existing assignment"
+      },
+      {
+        "type": "action",
+        "description": "Update the assignment to checking"
+      },
+      {
+        "type": "action",
+        "description": "Update the assignment to under review"
+      },
+      {
+        "type": "action",
+        "description": "Complete the assignment review"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the assignment shows the final reviewed or anomaly state"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the assignment history reflects the status changes"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC046",
+    "title": "Admin cannot delete a user without permission",
+    "description": "Verifies that unauthorized deletion is blocked and the user record remains available in the list.",
+    "category": "Usuarios y roles",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the users module"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to delete a user without sufficient permission"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an access denied message is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user remains in the table"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC047",
+    "title": "View reports dashboard",
+    "description": "As a supervisor, opening reports should show aggregated operational metrics on the reporting dashboard.",
+    "category": "Reportes y métricas agregadas",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the login page"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the reports section link"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify report dashboard metrics are displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC048",
+    "title": "Update an inventory movement",
+    "description": "As an admin, editing an existing inventory movement should save the corrected data in the inventory list.",
+    "category": "Kardex e inventario",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the login page"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the inventory section link"
+      },
+      {
+        "type": "action",
+        "description": "Open an existing inventory movement for editing"
+      },
+      {
+        "type": "action",
+        "description": "Update the movement details with valid data"
+      },
+      {
+        "type": "action",
+        "description": "Submit the updated inventory movement"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated movement is reflected in the inventory history"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC049",
+    "title": "Update a work schedule",
+    "description": "As an operations user, editing an existing work schedule should persist the revised times.",
+    "category": "Horarios y configuración operativa",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the login page"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the schedules section link"
+      },
+      {
+        "type": "action",
+        "description": "Open an existing schedule for editing"
+      },
+      {
+        "type": "action",
+        "description": "Update the schedule times with valid values"
+      },
+      {
+        "type": "action",
+        "description": "Submit the updated schedule"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated schedule is reflected in the schedules list"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC050",
+    "title": "Admin sees validation feedback for malformed user filters",
+    "description": "Verifies that invalid filter input in the users table is rejected with a visible error state.",
+    "category": "Usuarios y roles",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the users module"
+      },
+      {
+        "type": "action",
+        "description": "Enter malformed filter values"
+      },
+      {
+        "type": "action",
+        "description": "Apply the filters"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the users table shows a validation error state"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify filtered results are not displayed"
+      }
+    ],
+    "priority": "Low"
+  }
+]

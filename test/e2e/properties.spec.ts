@@ -15,13 +15,8 @@ test.describe("Módulo de Propiedades - Gestión de Propiedades", () => {
 
   test.beforeEach(async ({ page }) => {
     if (!useRealApi) {
-      await page.route("**/users/login", async (route) => {
-        const method = route.request().method();
-        if (method === "OPTIONS") {
-          await route.fulfill({ status: 200, headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Allow-Headers": "*" } });
-        } else {
-          await route.fulfill({ status: 200, contentType: "application/json", headers: { "Access-Control-Allow-Origin": "*" }, body: JSON.stringify({ success: true, data: validMockToken, messages: [] }) });
-        }
+      await page.addInitScript(() => {
+        localStorage.setItem("token", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibmFtZSI6IkFkbWluaXN0cmFkb3IiLCJlbWFpbCI6ImFkbWluQGV4YW1wbGUuY29tIiwicm9sZSI6IkFkbWluIiwiY2xpZW50SWQiOm51bGwsImV4cCI6MjUyNDYwODAwMH0.dummy-signature");
       });
 
       await page.route(/\/api\/v\d+\/houses.*/, async (route) => {
@@ -64,16 +59,19 @@ test.describe("Módulo de Propiedades - Gestión de Propiedades", () => {
       });
     }
 
-    await page.goto("/#/login");
-    await page.fill('input[name="username"]', "admin");
-    await page.fill('input[name="password"]', "123456");
-    await page.click('button[type="submit"]');
-    await expect(page).toHaveURL(/.*#\/home/);
+    if (useRealApi) {
+      await page.goto("/#/login");
+      await page.fill('input[name="username"]', "admin");
+      await page.fill('input[name="password"]', "123456");
+      await page.click('button[type="submit"]');
+      await expect(page).toHaveURL(/.*#\/home/);
+    }
+
     await page.goto("/#/properties");
   });
 
   test("debería mostrar el Control de Propiedades", async ({ page }) => {
-    await expect(page.locator("h1")).toContainText("Control de Propiedades");
+    await expect(page.getByRole("heading", { name: /Control de Propiedades/i })).toBeVisible();
 
     if (useRealApi) {
       // Real DB: houses on Calle Los Olivos (209, 207, 205, 203, 201)
@@ -90,8 +88,8 @@ test.describe("Módulo de Propiedades - Gestión de Propiedades", () => {
     if (useRealApi) {
       await expect(page.getByText("ACTIVA").first()).toBeVisible({ timeout: 10000 });
     } else {
-      await expect(page.getByText("ACTIVA")).toBeVisible();
-      await expect(page.getByText("INACTIVA")).toBeVisible();
+      await expect(page.getByText("ACTIVA", { exact: true }).first()).toBeVisible();
+      await expect(page.getByText("INACTIVA", { exact: true }).first()).toBeVisible();
     }
   });
 

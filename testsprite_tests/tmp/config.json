@@ -1,0 +1,20 @@
+{
+  "status": "init",
+  "type": "frontend",
+  "localEndpoint": "http://localhost:12345",
+  "serverMode": "development",
+  "loginUser": "admin",
+  "loginPassword": "123456",
+  "scope": "codebase",
+  "executionArgs": {
+    "projectName": "AXZY CHECK Residenciales WEB",
+    "projectPath": "/Users/axzy/DEV/CHECK/RESIDENCIALES/WEB",
+    "testIds": [],
+    "additionalInstruction": "Use HashRouter URLs (e.g. /#/login, /#/users). Use page.goto('/#/path'). Mock API endpoints with page.route() when possible. Use admin credentials admin / 123456. Server is in development mode on http://localhost:12345 with API at http://localhost:4444/api/v1.",
+    "serverMode": "development",
+    "envs": {
+      "API_KEY": "sk-user-EhuFI12mq4Tcgltwtws0kDWkaBKeSYO7J5cuh-dICHFItubmH_-dfIzWSt14nzRSxsf_nWkKXebeA98v2NQP9t-fN6vzNFyoMGPZIWkm8fpZJFvzyTXurHACM2NylhYNtB8"
+    }
+  },
+  "serverPort": 62690
+}

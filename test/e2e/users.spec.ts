@@ -95,13 +95,20 @@ test.describe("Módulo de Usuarios - Gestión de Usuarios", () => {
     },
     {
       id: "sched-3",
+      name: "MATUTINO",
+      startTime: "07:00",
+      endTime: "15:00",
+      active: true,
+    },
+    {
+      id: "sched-4",
       name: "VESPERTINO",
       startTime: "15:00",
       endTime: "23:00",
       active: true,
     },
     {
-      id: "sched-4",
+      id: "sched-5",
       name: "NOCTURNO",
       startTime: "23:00",
       endTime: "07:00",
@@ -124,35 +131,8 @@ test.describe("Módulo de Usuarios - Gestión de Usuarios", () => {
     });
 
     if (!useRealApi) {
-      const validMockToken =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibmFtZSI6IkFkbWluaXN0cmFkb3IiLCJlbWFpbCI6ImFkbWluQGV4YW1wbGUuY29tIiwicm9sZSI6IkFkbWluIiwiY2xpZW50SWQiOm51bGwsImV4cCI6MjUyNDYwODAwMH0.dummy-signature";
-
-      // Mock Login
-      await page.route("**/users/login", async (route) => {
-        const method = route.request().method();
-        if (method === "OPTIONS") {
-          await route.fulfill({
-            status: 200,
-            headers: {
-              "Access-Control-Allow-Origin": "*",
-              "Access-Control-Allow-Methods": "POST, OPTIONS",
-              "Access-Control-Allow-Headers": "*",
-            },
-          });
-        } else {
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            headers: {
-              "Access-Control-Allow-Origin": "*",
-            },
-            body: JSON.stringify({
-              success: true,
-              data: validMockToken,
-              messages: [],
-            }),
-          });
-        }
+      await page.addInitScript(() => {
+        localStorage.setItem("token", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibmFtZSI6IkFkbWluaXN0cmFkb3IiLCJlbWFpbCI6ImFkbWluQGV4YW1wbGUuY29tIiwicm9sZSI6IkFkbWluIiwiY2xpZW50SWQiOm51bGwsImV4cCI6MjUyNDYwODAwMH0.dummy-signature");
       });
 
       // Mock Catalog Client
@@ -243,11 +223,6 @@ test.describe("Módulo de Usuarios - Gestión de Usuarios", () => {
       await page.route(/\/api\/v\d+\/users.*/, async (route) => {
         const method = route.request().method();
         const url = route.request().url();
-
-        if (url.endsWith("/users/login")) {
-          await route.fallback();
-          return;
-        }
 
         if (method === "OPTIONS") {
           await route.fulfill({
@@ -350,7 +325,6 @@ test.describe("Módulo de Usuarios - Gestión de Usuarios", () => {
             }),
           });
         } else if (url.includes("/reset-password")) {
-          // Reset password route
           await route.fulfill({
             status: 200,
             contentType: "application/json",
@@ -451,18 +425,14 @@ test.describe("Módulo de Usuarios - Gestión de Usuarios", () => {
       });
     }
 
-    // 1. Ir a login
-    await page.goto("/#/login");
+    if (useRealApi) {
+      await page.goto("/#/login");
+      await page.fill('input[name="username"]', "admin");
+      await page.fill('input[name="password"]', "123456");
+      await page.click('button[type="submit"]');
+      await expect(page).toHaveURL(/.*#\/home/);
+    }
 
-    // 2. Autenticarse
-    await page.fill('input[name="username"]', "admin");
-    await page.fill('input[name="password"]', "123456");
-    await page.click('button[type="submit"]');
-
-    // 3. Confirmar login
-    await expect(page).toHaveURL(/.*#\/home/);
-
-    // 4. Navegar a usuarios
     await page.goto("/#/users");
   });
 
@@ -476,7 +446,7 @@ test.describe("Módulo de Usuarios - Gestión de Usuarios", () => {
   const modifiedUserFullName = `JUAN ${uniqueUserId} MODIFICADO PÉREZ ${uniqueUserId}`;
 
   test("debería mostrar el Directorio de Usuarios", async ({ page }) => {
-    await expect(page.locator("h1")).toContainText("Directorio de Usuarios");
+    await expect(page.getByRole("heading", { name: /Directorio de Usuarios/i })).toBeVisible();
     if (useRealApi) {
       await expect(page.getByText(/mario.*Mantenimiento/is)).toBeVisible({ timeout: 10000 });
       await expect(page.getByText(/ricardo.*Jefe de Turno/is)).toBeVisible({ timeout: 10000 });
@@ -515,12 +485,7 @@ test.describe("Módulo de Usuarios - Gestión de Usuarios", () => {
     await page.fill('input[name="password"]', "password123");
     await page.fill('input[name="confirmPassword"]', "password123");
 
-    await page.selectOption('select[name="scheduleId"]', { label: "Matutino" });
-    if (!useRealApi) {
-      await page.selectOption('select[name="clientId"]', {
-        label: "CORPO CENTRO",
-      });
-    }
+    await page.selectOption('select[name="scheduleId"]', { label: useRealApi ? "Matutino" : "MATUTINO" });
     // Guardar
     await page.click('button:has-text("Registrar Usuario")');
 

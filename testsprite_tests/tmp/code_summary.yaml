@@ -1,0 +1,243 @@
+# TestSprite code summary for AXZY CHECK Residenciales — WEB
+# Scanned: /Users/axzy/DEV/CHECK/RESIDENCIALES/WEB
+# Generated: 2026-06-04
+
+project:
+  name: check_ui
+  version: 1.2.0
+  type: vite-react-spa
+  port: 12345
+  api_base_url: http://localhost:4444/api/v1
+
+tech_stack:
+  language: typescript
+  typescript_mode: strict
+  build_tool: vite
+  framework: react@19.0.0
+  routing: react-router-dom@7.2.0 (HashRouter)
+  state: redux-toolkit@2.5.1 + redux-persist
+  http: axios@1.7.9
+  forms: formik@2.4.6 + yup@1.6.1
+  ui_library: "@axzydev/axzy_ui_system@1.1.0"
+  icons: react-icons@5.5.0
+  charts: chart.js@4.5.1
+  auth_jwt: react-jwt@1.3.0
+  dates: dayjs@1.11.19
+  payments: "@stripe/stripe-js@3.0.0 + @stripe/react-stripe-js@2.5.0"
+  qr: qrcode@1.5.4
+  maps: "@vis.gl/react-google-maps@1.7.1"
+  styling: tailwindcss@3
+  unit_test: vitest + @testing-library/react
+  e2e_test: "@playwright/test@1.60.0"
+  lint: eslint@9
+
+architecture:
+  entry: src/main.tsx
+  provider_stack:
+    - ITThemeProvider (theme={customTheme} showFab={true})
+    - Redux Provider
+    - HashRouter
+  layout: ITLayout with ITSidebar + ITNavbar
+  api_client:
+    path: src/core/axios/axios.ts
+    baseURL_env: VITE_BASE_URL
+    auth: "Authorization: Bearer <token> from Redux auth slice"
+  router: src/core/routes/ (central route map)
+  datatable_helper: src/core/services/table-fetcher.service.ts (fetchDataTable)
+  toast: src/providers/toast.provider.tsx
+  auth_state: src/core/store/auth/auth.slice.ts (redux-persist)
+  app_state: src/core/store/app/app.slice.ts
+
+modules:
+  total: 19
+  list:
+    - home           (HomePage + AnalyticsTab + OperationalDetailTab)
+    - auth           (LoginPage, RegisterPage)
+    - users          (UsersPage, ChangePasswordModal, CreateUserWizard)
+    - residents      (ResidentsPage, ResidentDetailPage, ContactsPage, ResidentForm, ResidentContactsDialog, ResidentQuickAccessDialog)
+    - properties     (PropertiesPage)
+    - payments       (PaymentsPage, FeesPage, PaymentReceiptPage, PaymentFormDialog, BulkAssignFeeDialog, PaymentSummaryCards)
+    - accesses       (AccessesPage)
+    - incidents      (IncidentsPage, IncidentDetailDialog)
+    - kardex         (KardexPage)
+    - maintenances   (MaintenancesPage)
+    - rounds         (RoundsPage, RoundDetailPage)
+    - schedules      (SchedulesPage)
+    - locations      (LocationsPage)
+    - zones          (under properties/ or settings)
+    - clients        (under settings)
+    - reports        (ReportsPage)
+    - settings       (SettingsPage)
+    - routes         (RoutesPage, CreateRoutePage)
+    - guards         (GuardsPage)
+    - complaints     (ComplaintsPage)
+
+pages:
+  total: 25
+
+key_features:
+  authentication:
+    - Login with username + password
+    - JWT token storage in Redux + localStorage (redux-persist)
+    - Default admin: admin / 123456
+    - Mock JWT pinned in tests: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibmFtZSI6IkFkbWluaXN0cmFkb3IiLCJlbWFpbCI6ImFkbWluQGV4YW1wbGUuY29tIiwicm9sZSI6IkFkbWluIiwiY2xpZW50SWQiOm51bGwsImV4cCI6MjUyNDYwODAwMH0.dummy-signature
+    - Route guards by role (ADMIN, LIDER, SHIFT, RESDN)
+    - Logout clears Redux state
+
+  dashboard:
+    - HomePage with 5 KPI cards (Residentes, Cuotas vencidas, Pases activos, Guardias, Incidencias pendientes)
+    - 3 tabs: nav (module grid), analytics (chart.js), detail (operational details)
+    - Theme-aware via useITTheme() + buildShades()
+    - Recent incidents + recent payments lists
+
+  datatables:
+    - ITDataTable component with server-side pagination/filtering/sort
+    - 14+ pages use this pattern (users, residents, properties, payments, fees, accesses, incidents, kardex, maintenances, rounds, schedules, locations, guards, complaints)
+    - "Response shape: data.rows=T[], data.total=number"
+    - Filter examples: role (string → relation), active (boolean), period, status
+
+  forms:
+    - Formik + Yup via ITFormBuilder
+    - FieldConfigV2 type-safe field config
+    - Currency input with currencyFormat: true
+    - Dialogs via ITDialog (portaled)
+    - Modal patterns: ResidentForm, PaymentFormDialog, CreateUserWizard, IncidentDetailDialog
+
+  payments:
+    - List payments with filters (resident, status, period, fee)
+    - Create ONE_TIME or MONTHLY fee
+    - Bulk assign fees to many residents at once
+    - Stripe checkout (LIVE keys in env)
+    - PDF receipt download via GET /payments/receipt/:id/download
+
+  incidents:
+    - Tabbed view (pending/attended)
+    - Detail dialog with timeline
+    - Real-time updates on creation (Resend email + WhatsApp fired server-side)
+    - Filters: category, type, status, date range, assignedTo
+
+  users:
+    - Server-side datatable with role + active filters
+    - ChangePasswordModal
+    - CreateUserWizard (multi-step)
+    - Reset password endpoint
+
+  theme:
+    - ITThemeProvider injects CSS vars on document.documentElement.style
+    - "--color-primary-50 to --color-primary-900 for primary, secondary, ternary, danger, success, info, alert, warning"
+    - 'Flat palette (e.g. primary="#065911"); 50-900 NOT auto-generated'
+    - buildShades(hex) helper generates 50-900 shades
+    - Floating color picker (showFab={true})
+    - No hardcoded Tailwind color classes
+    - useITTheme() hook; useITThemeSafe() returns undefined outside provider
+
+  i18n:
+    - Spanish only for user-facing copy
+    - dayjs.locale("es")
+    - All entity names in Spanish (Residente, Cuota, Pago, etc.)
+
+  reports:
+    - Aggregated metrics
+    - Export to PDF/Excel (planned)
+
+  offline_first:
+    - N/A (WEB is online-only; offline-first is APP concern)
+
+  theming_components:
+    - All UI primitives from @axzydev/axzy_ui_system
+    - ITCard, ITButton, ITBadget, ITDataTable, ITInput, ITFormBuilder, ITTable, ITTabs, ITDialog, ITDatePicker, ITTimePicker, ITToast, ITLoader, ITNavbar, ITSidebar, ITSlideToggle, ITStepper, ITSearchSelect, ITSelect, ITTripleFilter, ITDropfile, ITImage, ITLayout, ITText, ITCalendar, ITPagination
+
+roles:
+  - ADMIN (Administrador) — full access
+  - LIDER (Supervisor) — read all + operational dashboards
+  - SHIFT (Jefe de Guardias) — operational + reports
+  - RESDN (Residente) — resident self-service (limited in WEB)
+
+api_contracts:
+  base: /api/v1
+  auth: "Authorization: Bearer <jwt>"
+  standard_response:
+    shape: "{ success: boolean, data: <T> | { rows: T[], total: number }, messages: string[] }"
+  datatable_request:
+    page: number
+    limit: number
+    filters: object
+    sort: "Array of objects with field=string, dir=asc|desc"
+
+e2e_tests:
+  framework: playwright
+  config: playwright.config.ts
+  projects: [chromium, firefox, webkit]
+  base_url: http://localhost:12345
+  modes:
+    - mock: "page.route() intercepts; default; fully parallel"
+    - real: "USE_REAL_API=true; serial; requires API :4444"
+  test_files:
+    - accesses.spec.ts
+    - fees.spec.ts
+    - guards.spec.ts
+    - home.spec.ts
+    - incidents.spec.ts
+    - kardex.spec.ts
+    - locations.spec.ts
+    - login.spec.ts
+    - maintenances.spec.ts
+    - payments.spec.ts
+    - properties.spec.ts
+    - residents.spec.ts
+    - schedules.spec.ts
+    - users.spec.ts
+
+unit_tests:
+  framework: vitest
+  location: colocated next to source (*.test.tsx)
+  test_utils: src/core/utils/test-utils.tsx (wraps ITThemeProvider + Provider + BrowserRouter)
+
+server_state:
+  api_status: running
+  api_port: 4444
+  api_health: HTTP 200 on POST /users/login
+  web_status: running
+  web_port: 12345
+  web_health: HTTP 200 on GET /
+  server_mode: development
+
+known_gotchas:
+  - HashRouter: URLs are /#/path. Tests must page.goto("/#/path").
+  - Endpoint /properties → /houses/datatable (Prisma model is House, not Property).
+  - 'Datatable filter role="GUARD" must be converted to role.name="GUARD" server-side.'
+  - All Prisma Decimal values arrive as strings in JSON.
+  - JWT test bypass: in test env, req.headers['user'] accepted as JSON.
+  - No raw HTML primitives; use IT* components.
+  - No comments in code; no `any`; Spanish for user copy.
+  - Mock e2e users.spec.ts:478 flaky (first <h1> is on login page).
+  - residents.spec.ts uses .includes() not === for Unicode names (García ≠ Garcia).
+  - Houses on Calle Los Olivos 201-209, Paseo del Bosque 1-19, Privada de las Flores 102-110.
+  - Resident Rosa María Vega Contreras in Calle Los Olivos 203.
+  - Guards: Mario García Sandoval (MAINT), Ricardo Mendoza Ríos (SHIFT), Asael Morales Rivera (GUARD, on page 2 of users).
+
+test_data:
+  admin_credentials: { username: "admin", password: "123456" }
+  known_residents:
+    - name: "Rosa María Vega Contreras"
+      address: "Calle Los Olivos 203"
+  known_guards:
+    - name: "Mario García Sandoval"
+      role: MAINT
+    - name: "Ricardo Mendoza Ríos"
+      role: SHIFT
+    - name: "Asael Morales Rivera"
+      role: GUARD
+  known_houses:
+    - street: "Calle Los Olivos"
+      range: "201-209"
+    - street: "Paseo del Bosque"
+      range: "1-19"
+    - street: "Privada de las Flores"
+      range: "102-110"
+
+stripe:
+  status: LIVE keys in env
+  public_key: pk_live_51Oo9x0J46V6Ym5XxPXgfOduK3u7srd0U6SNRhVhSc8Xr8DFSOm9nDbFZF7t0VzTRkEF9YoQh730Riv5snfQ7g7FZ006Wn34rfA
+  min_charge_test: 1
+  min_charge_live: 10
