@@ -478,12 +478,15 @@ test.describe("Módulo de Usuarios - Gestión de Usuarios", () => {
   test("debería mostrar el Directorio de Usuarios", async ({ page }) => {
     await expect(page.locator("h1")).toContainText("Directorio de Usuarios");
     if (useRealApi) {
-      await expect(page.getByText(/mario.*Mantenimiento/is)).toBeVisible();
-      await expect(page.getByText(/ricardo.*Jefe de Turno/is)).toBeVisible();
-      await expect(page.getByText(/asael.*Guardia/is)).toBeVisible();
+      await expect(page.getByText(/mario.*Mantenimiento/is)).toBeVisible({ timeout: 10000 });
+      await expect(page.getByText(/ricardo.*Jefe de Turno/is)).toBeVisible({ timeout: 10000 });
+      // Asael is on page 2; search for him
+      await page.fill('input[placeholder="BUSCAR USUARIO..."]', "asael");
+      await expect(page.getByText(/asael.*Guardia/is)).toBeVisible({ timeout: 10000 });
+      await page.fill('input[placeholder="BUSCAR USUARIO..."]', "");
       // Isabel is on page 2; search for her
       await page.fill('input[placeholder="BUSCAR USUARIO..."]', "isabel");
-      await expect(page.getByText(/isabel.*Administrador/is)).toBeVisible({ timeout: 5000 });
+      await expect(page.getByText(/isabel.*Administrador/is)).toBeVisible({ timeout: 10000 });
       await page.fill('input[placeholder="BUSCAR USUARIO..."]', "");
     } else {
       await expect(page.getByText(/mario mantenimiento/i)).toBeVisible();

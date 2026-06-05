@@ -52,7 +52,7 @@ vi.mock("../services/PaymentsService", () => ({
   createPaymentCheckout: vi.fn(),
   createPayment: vi.fn(),
   getFees: vi.fn(),
-  getSubscriptionPlans: vi.fn(),
+
   createFee: vi.fn(),
   deleteFee: vi.fn(),
   getPaginatedFees: vi.fn(),

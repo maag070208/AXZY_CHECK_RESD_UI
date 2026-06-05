@@ -109,14 +109,14 @@ test.describe("Módulo de Residentes - Gestión de Residentes", () => {
     await expect(page.locator("h1")).toContainText("Directorio de Residentes");
 
     if (useRealApi) {
-      // Real DB: search for Juan Garcia (page 2 otherwise) then clear filter
+      // Real DB: search for Juan Carlos (page 2 otherwise) then clear filter
       await page.fill('input[placeholder="BUSCAR RESIDENTE..."]', "Juan");
-      await expect(page.getByText(/Juan Garcia/i)).toBeVisible({ timeout: 10000 });
+      await expect(page.getByText(/Juan Carlos/i)).toBeVisible({ timeout: 10000 });
       // Clear search and search for Rosa (also on page 2)
       await page.fill('input[placeholder="BUSCAR RESIDENTE..."]', "");
       await page.waitForTimeout(500);
       await page.fill('input[placeholder="BUSCAR RESIDENTE..."]', "Rosa");
-      await expect(page.getByText(/ROSA VEGA/i)).toBeVisible();
+      await expect(page.getByText(/Rosa Mar[ií]a Vega/i)).toBeVisible();
     } else {
       await expect(page.getByText(/JUAN PEREZ/i)).toBeVisible();
       await expect(page.getByText(/ANA GARCIA/i)).toBeVisible();
@@ -143,10 +143,10 @@ test.describe("Módulo de Residentes - Gestión de Residentes", () => {
     // Click "Ver Detalle" → navigate to /residents/:id detail page
     if (useRealApi) {
       await expect(page.locator("h1")).toContainText("Directorio de Residentes");
-      // Search for Juan Garcia (page 2 by default)
+      // Search for Juan Carlos (page 2 by default)
       await page.fill('input[placeholder="BUSCAR RESIDENTE..."]', "Juan");
       await page.waitForTimeout(600);
-      const row = page.locator("tr", { hasText: /JUAN GARCIA/i });
+      const row = page.locator("tr", { hasText: /Juan Carlos/i });
       await row.getByText("Ver Detalle").click();
       await expect(page).toHaveURL(/.*\/residents\/[\w-]+/);
       await expect(page.getByText(/Visión 360°/i)).toBeVisible({ timeout: 8000 });
@@ -171,7 +171,7 @@ test.describe("Módulo de Residentes - Gestión de Residentes", () => {
     await expect(page.locator("h1")).toContainText("Directorio de Residentes");
     await page.fill('input[placeholder="BUSCAR RESIDENTE..."]', "Juan");
     await page.waitForTimeout(600);
-    const row = page.locator("tr", { hasText: /JUAN GARCIA/i });
+    const row = page.locator("tr", { hasText: /Juan Carlos/i });
     await row.getByText("Ver Detalle").click();
     await expect(page).toHaveURL(/.*\/residents\/[\w-]+/);
     await expect(page.getByText(/Visión 360°/i)).toBeVisible({ timeout: 8000 });

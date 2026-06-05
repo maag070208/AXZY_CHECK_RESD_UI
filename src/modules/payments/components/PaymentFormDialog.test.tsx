@@ -24,7 +24,7 @@ vi.mock("../services/PaymentsService", () => ({
   deleteFee: vi.fn(),
   createFee: vi.fn(),
   getPaginatedFees: vi.fn(),
-  getSubscriptionPlans: vi.fn(),
+
   getPaymentSummary: vi.fn(),
 }));
 

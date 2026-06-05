@@ -11,7 +11,7 @@ import {
 import dayjs from "dayjs";
 import { useFormik } from "formik";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FaCog, FaMoneyBill, FaPlus, FaStripe, FaTrash } from "react-icons/fa";
+import { FaCog, FaMoneyBill, FaPlus, FaTrash } from "react-icons/fa";
 import { useDispatch } from "react-redux";
 import * as Yup from "yup";
 import {
@@ -19,8 +19,6 @@ import {
   deleteFee,
   FeeResponse,
   getPaginatedFees,
-  getSubscriptionPlans,
-  SubscriptionPlanResponse,
 } from "../services/PaymentsService";
 import BulkAssignFeeDialog from "../components/BulkAssignFeeDialog";
 
@@ -35,27 +33,9 @@ const FeesPage = () => {
   const dispatch = useDispatch();
   const [refreshKey, setRefreshKey] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
-  const [plans, setPlans] = useState<SubscriptionPlanResponse[]>([]);
-  const [loadingPlans, setLoadingPlans] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [feeToDeleteId, setFeeToDeleteId] = useState<string | null>(null);
   const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
-
-  const fetchPlans = async () => {
-    setLoadingPlans(true);
-    try {
-      const plansRes = await getSubscriptionPlans();
-      if (plansRes.success && plansRes.data) {
-        setPlans(plansRes.data);
-      }
-    } finally {
-      setLoadingPlans(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchPlans();
-  }, []);
 
   // Debounce search filter
   useEffect(() => {
@@ -97,7 +77,11 @@ const FeesPage = () => {
         .min(1, "Debe ser mayor a 0")
         .required("El monto es requerido"),
       type: Yup.string().required("El tipo es requerido"),
-      dueDate: Yup.string().required("Fecha de vencimiento es requerida"),
+      dueDate: Yup.string().when("type", {
+        is: "ONE_TIME",
+        then: (s) => s.required("Fecha de vencimiento requerida"),
+        otherwise: (s) => s.notRequired(),
+      }),
     }),
     onSubmit: async (values, { resetForm }) => {
       try {
@@ -184,11 +168,14 @@ const FeesPage = () => {
       key: "dueDate",
       label: "Vencimiento",
       type: "date" as const,
-      render: (row: FeeResponse) => (
-        <ITText className="text-xs text-slate-600">
-          {dayjs(row.dueDate).format("DD/MM/YYYY")}
-        </ITText>
-      ),
+      render: (row: FeeResponse) =>
+        row.type === "MONTHLY" ? (
+          <ITText className="text-xs text-slate-400 italic">—</ITText>
+        ) : (
+          <ITText className="text-xs text-slate-600">
+            {dayjs(row.dueDate).format("DD/MM/YYYY")}
+          </ITText>
+        ),
     },
     {
       key: "actions",
@@ -211,8 +198,8 @@ const FeesPage = () => {
   return (
     <div className="p-6 min-h-screen font-sans text-slate-800">
       <ModuleHeader
-        title="Catálogo de Cuotas y Planes"
-        subtitle="Configuración de cobros manuales y suscripciones"
+        title="Catálogo de Cuotas"
+        subtitle="Configuración de cobros manuales"
         icon={FaCog}
         onRefresh={() => setRefreshKey((prev) => prev + 1)}
         search={{
@@ -222,210 +209,136 @@ const FeesPage = () => {
         }}
       />
 
-      <div className="flex justify-end mb-4">
-        <ITButton
-          variant="outlined"
-          className="border-slate-200 text-slate-600"
-          size="small"
-          onClick={() => setBulkAssignOpen(true)}
-        >
-          <FaPlus size={10} /> Asignación Masiva
-        </ITButton>
+      <div className="flex items-center justify-between mb-6 -mt-4">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-lg border border-slate-100">
+            <FaMoneyBill size={14} className="text-slate-400" />
+            <ITText className="text-xs font-medium text-slate-500">
+              Tipos de Cuota
+            </ITText>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <ITButton
+            variant="outlined"
+            size="small"
+            className="!flex !flex-row !items-center !gap-1.5 border-slate-200 text-slate-500 hover:text-slate-700 hover:border-slate-300 !rounded-lg px-3"
+            onClick={() => setBulkAssignOpen(true)}
+          >
+            <FaPlus size={9} /> Asignación Masiva
+          </ITButton>
+          <ITButton
+            onClick={() => setIsAdding(true)}
+            size="small"
+            variant="filled"
+            color="primary"
+            className="!flex !flex-row !items-center !gap-1.5 !rounded-lg px-3 shadow-sm"
+          >
+            <FaPlus size={9} /> Nueva Cuota
+          </ITButton>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-        {/* LADO IZQUIERDO: Tipos de Cuotas Manuales */}
-        <div>
-          {!isAdding ? (
-            <div className="space-y-6">
-              <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-100 shadow-sm relative overflow-hidden">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-slate-50 text-slate-600 flex items-center justify-center">
-                    <FaMoneyBill size={18} />
-                  </div>
-                  <div>
-                    <ITText className="font-semibold text-slate-900 text-sm">
-                      Cuotas Manuales
-                    </ITText>
-                    <ITText className="text-xs text-slate-500">
-                      Configuración de cobros directos
-                    </ITText>
-                  </div>
-                </div>
-                <ITButton
-                  onClick={() => setIsAdding(true)}
-                  size="small"
-                  variant="filled"
-                  color="primary"
-                >
-                  <FaPlus size={10} /> Nueva Cuota
-                </ITButton>
-              </div>
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <ITDataTable<FeeResponse & Record<string, unknown>>
+          key={refreshKey}
+          fetchData={memoizedFetchFees}
+          externalFilters={externalFilters}
+          defaultItemsPerPage={10}
+          title=""
+          columns={columns}
+        />
+      </div>
 
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                <ITDataTable<FeeResponse & Record<string, unknown>>
-                  key={refreshKey}
-                  fetchData={memoizedFetchFees}
-                  externalFilters={externalFilters}
-                  defaultItemsPerPage={5}
-                  title=""
-                  columns={columns}
-                />
-              </div>
-            </div>
-          ) : (
-            <form
-              onSubmit={formik.handleSubmit}
-              className="bg-white p-6 rounded-2xl border border-slate-100 space-y-5"
+      <ITDialog
+        isOpen={isAdding}
+        onClose={() => {
+          setIsAdding(false);
+          formik.resetForm();
+        }}
+        title="Alta de Tipo de Pago"
+      >
+        <form onSubmit={formik.handleSubmit} className="space-y-5 p-4">
+          <ITInput
+            label="Nombre (Ej. Mensualidad, Multa)"
+            name="name"
+            value={formik.values.name}
+            onChange={formik.handleChange}
+            error={formik.errors.name as string}
+            placeholder="Ej. Mantenimiento Mes 6"
+          />
+          <ITInput
+            label="Monto (MXN)"
+            name="amount"
+            type="number"
+            currencyFormat
+            value={formik.values.amount}
+            onChange={formik.handleChange}
+            error={formik.errors.amount as string}
+            placeholder="0.00"
+          />
+          <ITInput
+            label="Descripción (Opcional)"
+            name="description"
+            value={formik.values.description}
+            onChange={formik.handleChange}
+            placeholder="Ej. Cuota mensual ordinaria"
+          />
+          <div className="flex flex-col gap-1.5">
+            <ITText className="text-xs font-medium text-slate-700">
+              Tipo de Cuota
+            </ITText>
+            <select
+              name="type"
+              value={formik.values.type}
+              onChange={formik.handleChange}
+              className="w-full bg-white border border-slate-200 rounded-lg p-3 text-sm text-slate-700 outline-none focus:border-slate-900 transition-colors"
             >
-              <div className="pb-3 border-b border-slate-100 mb-6">
-                <ITText className="font-semibold text-slate-900 text-base">
-                  Alta de Tipo de Pago
+              <option value="ONE_TIME">Cargo Único (1 a 1)</option>
+              <option value="MONTHLY">Cargo Mensual (Recurrente)</option>
+            </select>
+          </div>
+          {formik.values.type === "ONE_TIME" && (
+            <div className="flex flex-col gap-1.5">
+              <ITText className="text-xs font-medium text-slate-700">
+                Fecha de Vencimiento
+              </ITText>
+              <input
+                name="dueDate"
+                type="date"
+                value={formik.values.dueDate}
+                onChange={formik.handleChange}
+                className="w-full bg-white border border-slate-200 rounded-lg p-3 text-sm text-slate-700 outline-none focus:border-slate-900 transition-colors"
+              />
+              {formik.errors.dueDate && formik.touched.dueDate && (
+                <ITText className="text-rose-500 text-[10px] font-bold mt-1">
+                  {formik.errors.dueDate as string}
                 </ITText>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4">
-                <ITInput
-                  label="Nombre (Ej. Mensualidad, Multa)"
-                  name="name"
-                  value={formik.values.name}
-                  onChange={formik.handleChange}
-                  error={formik.errors.name as string}
-                  placeholder="Ej. Mantenimiento Mes 6"
-                />
-                <ITInput
-                  label="Monto (MXN)"
-                  name="amount"
-                  type="number"
-                  value={formik.values.amount}
-                  onChange={formik.handleChange}
-                  error={formik.errors.amount as string}
-                  placeholder="0.00"
-                />
-                <ITInput
-                  label="Descripción (Opcional)"
-                  name="description"
-                  value={formik.values.description}
-                  onChange={formik.handleChange}
-                  placeholder="Ej. Cuota mensual ordinaria"
-                />
-                <div className="flex flex-col gap-1.5">
-                  <ITText className="text-xs font-medium text-slate-700">
-                    Tipo de Cuota
-                  </ITText>
-                  <select
-                    name="type"
-                    value={formik.values.type}
-                    onChange={formik.handleChange}
-                    className="w-full bg-white border border-slate-200 rounded-lg p-3 text-sm text-slate-700 outline-none focus:border-slate-900 transition-colors"
-                  >
-                    <option value="ONE_TIME">Cargo Único (1 a 1)</option>
-                    <option value="MONTHLY">Cargo Mensual (Recurrente)</option>
-                  </select>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <ITText className="text-xs font-medium text-slate-700">
-                    Fecha de Vencimiento Base
-                  </ITText>
-                  <input
-                    name="dueDate"
-                    type="date"
-                    value={formik.values.dueDate}
-                    onChange={formik.handleChange}
-                    className="w-full bg-white border border-slate-200 rounded-lg p-3 text-sm text-slate-700 outline-none focus:border-slate-900 transition-colors"
-                  />
-                  {formik.errors.dueDate && formik.touched.dueDate && (
-                    <ITText className="text-rose-500 text-[10px] font-bold mt-1">
-                      {formik.errors.dueDate as string}
-                    </ITText>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-3 mt-6 pt-5 border-t border-slate-100">
-                <ITButton
-                  type="button"
-                  variant="outlined"
-                  onClick={() => setIsAdding(false)}
-                  className="border-slate-200 text-slate-600 hover:bg-slate-50 !rounded-lg font-medium"
-                >
-                  Cancelar
-                </ITButton>
-                <ITButton
-                  type="submit"
-                  className="bg-slate-900 text-white hover:bg-slate-800 !rounded-lg font-medium"
-                >
-                  Guardar Cuota
-                </ITButton>
-              </div>
-            </form>
-          )}
-        </div>
-
-        {/* LADO DERECHO: Suscripciones de Stripe */}
-        <div>
-          <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-xl border border-slate-100 shadow-sm relative overflow-hidden">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-slate-50 text-slate-600 flex items-center justify-center">
-                <FaStripe size={18} />
-              </div>
-              <div>
-                <ITText className="font-semibold text-slate-900 text-sm">
-                  Planes de Suscripción
-                </ITText>
-                <ITText className="text-xs text-slate-500">
-                  {plans.length} Activos · Sincronizado con Stripe
-                </ITText>
-              </div>
+              )}
             </div>
-          </div>
+          )}
 
-          <div className="grid grid-cols-1 gap-4">
-            {plans.map((plan) => (
-              <div
-                key={plan.id}
-                className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm relative overflow-hidden hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <ITText className="font-semibold text-slate-900 text-base">
-                    {plan.name}
-                  </ITText>
-                  <ITBadget
-                    color="primary"
-                    className="!font-semibold uppercase tracking-wider text-[10px] !rounded-lg"
-                  >
-                    {plan.interval === "month" ? "MENSUAL" : plan.interval === "year" ? "ANUAL" : plan.interval}
-                  </ITBadget>
-                </div>
-                <ITText className="text-xs text-slate-500 mb-4">
-                  {plan.description || "Plan de suscripción automatizada"}
-                </ITText>
-
-                <div className="flex items-baseline gap-1">
-                  <ITText className="font-bold text-2xl text-slate-900">
-                    {formatCurrency(plan.amount)}
-                  </ITText>
-                  <ITText className="text-xs text-slate-400 font-medium">
-                    /{plan.interval === "month" ? "mes" : plan.interval === "year" ? "año" : plan.interval}
-                  </ITText>
-                </div>
-              </div>
-            ))}
-            {plans.length === 0 && !loadingPlans && (
-              <div className="py-16 text-center flex flex-col items-center border border-dashed border-slate-100 rounded-xl bg-slate-50/50">
-                <ITText className="text-slate-400 font-medium text-sm">
-                  Sin planes en Stripe
-                </ITText>
-              </div>
-            )}
-            {loadingPlans && (
-              <div className="flex justify-center py-12">
-                <div className="w-8 h-8 border-2 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
-              </div>
-            )}
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+            <ITButton
+              type="button"
+              variant="outlined"
+              onClick={() => {
+                setIsAdding(false);
+                formik.resetForm();
+              }}
+              className="border-slate-200 text-slate-600 hover:bg-slate-50 !rounded-lg font-medium"
+            >
+              Cancelar
+            </ITButton>
+            <ITButton
+              type="submit"
+              className="bg-slate-900 text-white hover:bg-slate-800 !rounded-lg font-medium"
+            >
+              Guardar Cuota
+            </ITButton>
           </div>
-        </div>
-      </div>
+        </form>
+      </ITDialog>
 
       <ITDialog
         isOpen={!!feeToDeleteId}

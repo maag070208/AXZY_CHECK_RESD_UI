@@ -221,6 +221,7 @@ export const ContactsPage: React.FC = () => {
                   size="small"
                   variant="filled"
                   color="primary"
+                  className="!flex !flex-row !items-center !gap-2"
                 >
                   <FaPlus size={12} /> Nuevo Contacto
             </ITButton>

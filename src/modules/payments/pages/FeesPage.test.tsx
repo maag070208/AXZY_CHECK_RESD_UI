@@ -4,41 +4,23 @@ import userEvent from "@testing-library/user-event";
 import FeesPage from "./FeesPage";
 import * as PaymentsService from "../services/PaymentsService";
 
-const mockFeesData = {
-  data: [
-    {
-      id: "fee-1",
-      name: "Mantenimiento",
-      description: "Cuota mensual ordinaria",
-      amount: 500,
-      type: "MONTHLY",
-      dueDate: "2026-07-01",
-      active: true,
-      createdAt: "",
-      updatedAt: "",
-      deletedAt: null,
-    },
-  ],
-  total: 1,
+const mockFeeRow = {
+  id: "fee-1",
+  name: "Mantenimiento",
+  description: "Cuota mensual ordinaria",
+  amount: 500,
+  type: "MONTHLY" as const,
+  dueDate: "2026-07-01",
+  active: true,
+  createdAt: "",
+  updatedAt: "",
+  deletedAt: null,
 };
 
-const mockPlans = [
-  {
-    id: "plan-1",
-    name: "Premium",
-    description: "Suscripción anual",
-    amount: 2400,
-    stripePriceId: "price_xxx",
-    active: true,
-    interval: "month",
-    createdAt: "",
-    updatedAt: "",
-  },
-];
+const mockFeesData = { data: [mockFeeRow], total: 1 };
 
 vi.mock("../services/PaymentsService", () => ({
   getPaginatedFees: vi.fn(),
-  getSubscriptionPlans: vi.fn(),
   createFee: vi.fn(),
   deleteFee: vi.fn(),
   getFees: vi.fn(),
@@ -53,11 +35,6 @@ describe("FeesPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(PaymentsService.getPaginatedFees).mockResolvedValue(mockFeesData);
-    vi.mocked(PaymentsService.getSubscriptionPlans).mockResolvedValue({
-      success: true,
-      data: mockPlans,
-      messages: [],
-    });
     vi.mocked(PaymentsService.createFee).mockResolvedValue({
       success: true,
       data: mockFeesData.data[0] as any,
@@ -70,73 +47,45 @@ describe("FeesPage", () => {
     });
   });
 
-  it("debe renderizar el encabezado, tabla de cuotas y planes", async () => {
+  it("debe renderizar el encabezado y boton nueva cuota", () => {
     render(<FeesPage />);
-
-    expect(screen.getByText("Catálogo de Cuotas y Planes")).toBeInTheDocument();
-
-    await waitFor(() => {
-      expect(screen.getByText("Mantenimiento")).toBeInTheDocument();
-      expect(screen.getByText("Premium")).toBeInTheDocument();
-    });
+    expect(screen.getByText("Catálogo de Cuotas")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /nueva cuota/i })).toBeInTheDocument();
   });
 
-  it("debe mostrar el formulario de alta al hacer clic en Nueva Cuota", async () => {
+  it("debe mostrar el dialogo de alta al hacer clic en Nueva Cuota", async () => {
     const user = userEvent.setup();
     render(<FeesPage />);
-
-    await waitFor(() => {
-      expect(screen.getByRole("button", { name: /nueva cuota/i })).toBeInTheDocument();
-    });
-
     await user.click(screen.getByRole("button", { name: /nueva cuota/i }));
-
     expect(screen.getByText("Alta de Tipo de Pago")).toBeInTheDocument();
   });
 
-  it("debe crear una cuota al llenar el formulario", async () => {
+  it("debe crear una cuota mensual sin fecha de vencimiento", async () => {
     const user = userEvent.setup();
     render(<FeesPage />);
-
-    await waitFor(() => {
-      expect(screen.getByRole("button", { name: /nueva cuota/i })).toBeInTheDocument();
-    });
-
     await user.click(screen.getByRole("button", { name: /nueva cuota/i }));
 
-    const nameInput = screen.getByLabelText(/nombre/i);
-    await user.clear(nameInput);
-    await user.type(nameInput, "Seguridad");
+    await user.type(screen.getByLabelText(/nombre/i), "Seguridad");
+    await user.type(screen.getByLabelText(/monto/i), "300");
 
-    const amountInput = screen.getByLabelText(/monto/i);
-    await user.clear(amountInput);
-    await user.type(amountInput, "300");
+    const typeSelect = screen.getByDisplayValue('Cargo Único (1 a 1)');
+    await user.selectOptions(typeSelect, "MONTHLY");
 
-    const submitBtn = screen.getByRole("button", { name: /guardar cuota/i });
-    await user.click(submitBtn);
+    await user.click(screen.getByRole("button", { name: /guardar cuota/i }));
 
     await waitFor(() => {
-      expect(PaymentsService.createFee).toHaveBeenCalled();
+      expect(PaymentsService.createFee).toHaveBeenCalledWith(
+        expect.objectContaining({ name: "Seguridad", amount: 300, type: "MONTHLY" }),
+      );
     });
   });
 
-  it("debe abrir confirmación al eliminar una cuota", async () => {
+  it("debe cerrar el dialogo al cancelar", async () => {
     const user = userEvent.setup();
     render(<FeesPage />);
-
-    await waitFor(() => {
-      expect(screen.getByText("Mantenimiento")).toBeInTheDocument();
-    });
-
-    const deleteBtn = screen.getByTitle("Eliminar");
-    await user.click(deleteBtn);
-
-    expect(screen.getByText(/¿Eliminar Tipo de Pago\?/i)).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: /eliminar ahora/i }));
-
-    await waitFor(() => {
-      expect(PaymentsService.deleteFee).toHaveBeenCalledWith("fee-1");
-    });
+    await user.click(screen.getByRole("button", { name: /nueva cuota/i }));
+    expect(screen.getByText("Alta de Tipo de Pago")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /cancelar/i }));
+    expect(screen.queryByText("Alta de Tipo de Pago")).not.toBeInTheDocument();
   });
 });

@@ -18,6 +18,7 @@ import AccessesPage from "./modules/accesses/pages/AccessesPage";
 
 import UsersPage from "./modules/users/pages/UsersPage";
 import PaymentsPage from "./modules/payments/pages/PaymentsPage";
+import PaymentReceiptPage from "./modules/payments/pages/PaymentReceiptPage";
 import FeesPage from "./modules/payments/pages/FeesPage";
 import IncidentsPage from "./modules/incidents/pages/IncidentsPage";
 import ComplaintsPage from "./modules/complaints/pages/ComplaintsPage";
@@ -97,6 +98,7 @@ function App() {
           <Route path="/routes/new" element={<CreateRoutePage />} />
           <Route path="/routes/edit/:id" element={<CreateRoutePage />} />
           <Route path="/payments" element={<PaymentsPage />} />
+          <Route path="/payments/receipt/:id" element={<PaymentReceiptPage />} />
           <Route path="/fees" element={<FeesPage />} />
           <Route path="/users" element={<UsersPage />} />
           <Route path="/incidents" element={<IncidentsPage />} />

@@ -419,10 +419,10 @@ test.describe("Módulo de Guardias - Gestión de Guardias", () => {
   });
 
   test("debería abrir el expediente de tareas del guardia", async ({ page }) => {
-    const row = page.locator("tr", { hasText: useRealApi ? /mario.*Mantenimiento/is : /mario mantenimiento/i });
+    const row = page.locator("tr", { hasText: useRealApi ? /mario.*sandoval/is : /mario mantenimiento/i });
     await row.getByRole("button", { name: "Ver Tareas" }).click();
 
-    await expect(page.getByRole("heading", { name: useRealApi ? /mario.*garcia/is : /mario mantenimiento/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: useRealApi ? /mario.*sandoval/is : /mario mantenimiento/i })).toBeVisible();
 
     if (process.env.USE_REAL_API) {
       // Real DB: mario has no seeded task assignments → expediente shows "Sin Historial"

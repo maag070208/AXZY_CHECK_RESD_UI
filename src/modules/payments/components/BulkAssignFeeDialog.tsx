@@ -1,18 +1,15 @@
 import { showToast } from "@app/core/store/toast/toast.slice";
-import {
-  ITButton,
-  ITDialog,
-  ITInput,
-  ITText,
-} from "@axzydev/axzy_ui_system";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { FaPlus, FaSearch, FaTrash, FaUser } from "react-icons/fa";
+import { ITButton, ITDialog, ITText } from "@axzydev/axzy_ui_system";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { FaSearch, FaUser } from "react-icons/fa";
 import { useDispatch } from "react-redux";
 import { getPaginatedResidents } from "../../residents/services/ResidentsService";
 import {
   bulkAssignResidentFees,
+  bulkUnassignResidentFees,
   FeeResponse,
   getFees,
+  getResidentFeesByFeeId,
 } from "../services/PaymentsService";
 
 interface Props {
@@ -27,19 +24,11 @@ const BulkAssignFeeDialog = ({ isOpen, onClose, onSuccess }: Props) => {
   const [selectedFeeId, setSelectedFeeId] = useState("");
   const [residents, setResidents] = useState<any[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [originalIds, setOriginalIds] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState("");
   const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (isOpen) {
-      getFees().then((res) => {
-        if (res.success && res.data) setFees(res.data);
-      });
-      setSelectedFeeId("");
-      setSelectedIds(new Set());
-      setSearchTerm("");
-    }
-  }, [isOpen]);
+  const [loadingAssignments, setLoadingAssignments] = useState(false);
+  const loadingFeeRef = useRef("");
 
   const fetchResidents = useCallback(async (search: string) => {
     const res = await getPaginatedResidents({
@@ -49,6 +38,47 @@ const BulkAssignFeeDialog = ({ isOpen, onClose, onSuccess }: Props) => {
     });
     setResidents(res.data || []);
   }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      getFees().then((res) => {
+        if (res.success && res.data) setFees(res.data);
+      });
+      setSelectedFeeId("");
+      setSelectedIds(new Set());
+      setOriginalIds(new Set());
+      setSearchTerm("");
+      fetchResidents("");
+    }
+  }, [isOpen, fetchResidents]);
+
+  const loadAssignments = useCallback(async (feeId: string) => {
+    loadingFeeRef.current = feeId;
+    setLoadingAssignments(true);
+    const res = await getResidentFeesByFeeId(feeId);
+    if (loadingFeeRef.current !== feeId) {
+      setLoadingAssignments(false);
+      return;
+    }
+    const ids = new Set<string>();
+    if (res.success && res.data) {
+      res.data.forEach((rf) => {
+        if (rf.residentId) ids.add(rf.residentId);
+      });
+    }
+    setSelectedIds(ids);
+    setOriginalIds(new Set(ids));
+    setLoadingAssignments(false);
+  }, []);
+
+  useEffect(() => {
+    if (selectedFeeId) {
+      loadAssignments(selectedFeeId);
+    } else {
+      setSelectedIds(new Set());
+      setOriginalIds(new Set());
+    }
+  }, [selectedFeeId, loadAssignments]);
 
   useEffect(() => {
     const timer = setTimeout(() => fetchResidents(searchTerm), 300);
@@ -66,25 +96,55 @@ const BulkAssignFeeDialog = ({ isOpen, onClose, onSuccess }: Props) => {
 
   const selectAll = () => {
     if (selectedIds.size === residents.length) {
-      setSelectedIds(new Set());
+      setSelectedIds(new Set(originalIds));
     } else {
       setSelectedIds(new Set(residents.map((r) => r.id)));
     }
   };
 
   const handleSubmit = async () => {
-    if (!selectedFeeId || selectedIds.size === 0) return;
+    if (!selectedFeeId) return;
     setSubmitting(true);
-    const res = await bulkAssignResidentFees({
-      residentIds: Array.from(selectedIds),
-      feeId: selectedFeeId,
-    });
-    if (res.success) {
-      dispatch(showToast({ message: "Cuotas asignadas correctamente", type: "success" }));
+
+    const selected = Array.from(selectedIds);
+    const original = Array.from(originalIds);
+    const toAdd = selected.filter((id) => !original.includes(id));
+    const toRemove = original.filter((id) => !selected.includes(id));
+
+    let success = true;
+
+    if (toAdd.length > 0) {
+      const res = await bulkAssignResidentFees({
+        residentIds: toAdd,
+        feeId: selectedFeeId,
+      });
+      if (!res.success) success = false;
+    }
+
+    if (toRemove.length > 0) {
+      const res = await bulkUnassignResidentFees({
+        residentIds: toRemove,
+        feeId: selectedFeeId,
+      });
+      if (!res.success) success = false;
+    }
+
+    if (success) {
+      dispatch(
+        showToast({
+          message: "Cuotas actualizadas correctamente",
+          type: "success",
+        }),
+      );
       onSuccess();
       onClose();
     } else {
-      dispatch(showToast({ message: "Error al asignar cuotas", type: "error" }));
+      dispatch(
+        showToast({
+          message: "Error al actualizar cuotas",
+          type: "error",
+        }),
+      );
     }
     setSubmitting(false);
   };
@@ -108,7 +168,12 @@ const BulkAssignFeeDialog = ({ isOpen, onClose, onSuccess }: Props) => {
             <option value="">-- Seleccionar --</option>
             {fees.map((f) => (
               <option key={f.id} value={f.id}>
-                {f.name} - {new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(f.amount)} ({f.type === "MONTHLY" ? "Mensual" : "Único"})
+                {f.name} -{" "}
+                {new Intl.NumberFormat("es-MX", {
+                  style: "currency",
+                  currency: "MXN",
+                }).format(f.amount)}{" "}
+                ({f.type === "MONTHLY" ? "Mensual" : "Único"})
               </option>
             ))}
           </select>
@@ -119,7 +184,10 @@ const BulkAssignFeeDialog = ({ isOpen, onClose, onSuccess }: Props) => {
             Buscar Residentes
           </ITText>
           <div className="relative">
-            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+            <FaSearch
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              size={14}
+            />
             <input
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -139,7 +207,9 @@ const BulkAssignFeeDialog = ({ isOpen, onClose, onSuccess }: Props) => {
             onClick={selectAll}
             className="text-xs"
           >
-            {selectedIds.size === residents.length ? "Deseleccionar todos" : "Seleccionar todos"}
+            {selectedIds.size === residents.length
+              ? "Deseleccionar todos"
+              : "Seleccionar todos"}
           </ITButton>
         </div>
 
@@ -190,10 +260,11 @@ const BulkAssignFeeDialog = ({ isOpen, onClose, onSuccess }: Props) => {
           <ITButton
             variant="filled"
             color="primary"
-            onClick={handleSubmit}
-            disabled={!selectedFeeId || selectedIds.size === 0 || submitting}
+            onClick={handleSubmit}            disabled={!selectedFeeId || submitting}
           >
-            {submitting ? "Asignando..." : `Asignar a ${selectedIds.size} residente(s)`}
+            {submitting
+              ? "Guardando..."
+              : "Guardar cambios"}
           </ITButton>
         </div>
       </div>

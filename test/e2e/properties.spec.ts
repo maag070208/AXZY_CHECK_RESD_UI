@@ -76,10 +76,10 @@ test.describe("Módulo de Propiedades - Gestión de Propiedades", () => {
     await expect(page.locator("h1")).toContainText("Control de Propiedades");
 
     if (useRealApi) {
-      // Real DB: page 1 sorted by number DESC → 405 down to 301
-      await expect(page.getByText(/Número: 405/i)).toBeVisible({ timeout: 10000 });
+      // Real DB: houses on Calle Los Olivos (209, 207, 205, 203, 201)
+      await expect(page.getByText(/Número: 209/i)).toBeVisible({ timeout: 10000 });
       await expect(page.getByText(/Calle Los Olivos/i).first()).toBeVisible();
-      await expect(page.getByText(/Número: 301/i)).toBeVisible();
+      await expect(page.getByText(/Número: 201/i)).toBeVisible();
     } else {
       await expect(page.getByText(/Número: A-101/i)).toBeVisible();
       await expect(page.getByText(/AV TULIPANES/i)).toBeVisible();
@@ -118,9 +118,9 @@ test.describe("Módulo de Propiedades - Gestión de Propiedades", () => {
 
   test("debería permitir editar una propiedad", async ({ page }) => {
     if (useRealApi) {
-      // Real DB: editar la primera propiedad de página 1 (Número: 405, Calle Los Olivos)
-      await page.waitForSelector("text=Número: 405", { timeout: 10000 });
-      const row = page.locator("tr", { hasText: /Número: 405/ });
+      // Real DB: editar la primera propiedad de página 1 (Número: 209, Calle Los Olivos)
+      await page.waitForSelector("text=Número: 209", { timeout: 10000 });
+      const row = page.locator("tr", { hasText: /Número: 209/ });
       await row.getByTitle("Editar").click();
       await expect(page.getByRole("heading", { name: /Editar Propiedad/i })).toBeVisible();
       // Solo abrir y cerrar — no modificar datos reales

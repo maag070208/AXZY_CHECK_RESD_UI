@@ -7,6 +7,7 @@ test.describe("Módulo de Accesos - Control de Pases e Invitaciones", () => {
 
   // ── Shared state for real-API mode ────────────────────────────────────────
   let createdQrCode: string | null = null;
+let createdVisitorName: string = "";
 
   // ── Mock data for non-real API mode ──────────────────────────────────────
   const mockAccesses = [
@@ -122,12 +123,12 @@ test.describe("Módulo de Accesos - Control de Pases e Invitaciones", () => {
     });
     const residentsData = await residentsRes.json();
     const rosaResident = residentsData.data.rows.find(
-      (r: any) => r.user?.name === "Rosa" && r.user?.lastName === "Vega"
+      (r: any) => r.user?.name?.toLowerCase().includes("rosa") && r.user?.lastName?.toLowerCase().includes("vega")
     );
     if (!rosaResident) throw new Error("Rosa Vega resident not found");
-    console.log(`[Setup] Rosa Vega resident ID: ${rosaResident.id}`);
+    console.log(`[Setup] Rosa Vega resident: ${rosaResident.user.name} ${rosaResident.user.lastName} (${rosaResident.id})`);
 
-    // 3. Get Madre de Rosa contact info (for visitor data)
+    // 3. Get first available contact for Rosa (Madre may not be seeded — use any)
     const contactsRes = await fetch(`${apiBase}/contacts/datatable`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -135,10 +136,10 @@ test.describe("Módulo de Accesos - Control de Pases e Invitaciones", () => {
     });
     const contactsData = await contactsRes.json();
     const madreContact = contactsData.data.rows?.find(
-      (c: any) => c.name && c.name.startsWith("Madre")
-    );
-    if (!madreContact) throw new Error("Madre de Rosa contact not found");
-    console.log(`[Setup] Madre de Rosa contact: ${madreContact.name} tel: ${madreContact.phone}`);
+      (c: any) => c.name && c.name.toLowerCase().includes("rosa")
+    ) || contactsData.data.rows?.[0];
+    if (!madreContact) throw new Error("No contact found for Rosa Vega");
+    console.log(`[Setup] Rosa contact: ${madreContact.name} tel: ${madreContact.phone}`);
 
     // 4. Create PENDING access (2 hours duration) via visitor data (not visitorId)
     const now = new Date();
@@ -158,7 +159,8 @@ test.describe("Módulo de Accesos - Control de Pases e Invitaciones", () => {
     const createData = await createRes.json();
     if (!createData.success) throw new Error(`Failed to create access: ${JSON.stringify(createData)}`);
     createdQrCode = createData.data.qrCode;
-    console.log(`[Setup] Pase PENDING creado para Madre de Rosa (2h) — QR: ${createdQrCode}`);
+    createdVisitorName = madreContact.name;
+    console.log(`[Setup] Pase PENDING creado para ${madreContact.name} (2h) — QR: ${createdQrCode}`);
   });
 
   test.beforeEach(async ({ page }) => {
@@ -175,8 +177,9 @@ test.describe("Módulo de Accesos - Control de Pases e Invitaciones", () => {
     await expect(page.locator("h1")).toContainText("Control de Accesos");
 
     if (useRealApi) {
-      // Real DB: Madre de Rosa existe + el pase recién creado (PENDING)
-      await expect(page.getByText(/Madre de Rosa/i).first()).toBeVisible({ timeout: 10000 });
+      // Real DB: visitor name varies by seed — use dynamic match
+      const visitorRegex = new RegExp(createdVisitorName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+      await expect(page.getByText(visitorRegex).first()).toBeVisible({ timeout: 10000 });
       await expect(page.getByText(/AXZ-/i).first()).toBeVisible();
     } else {
       await expect(page.getByText(/CARLOS VISITANTE/i)).toBeVisible();
@@ -197,10 +200,11 @@ test.describe("Módulo de Accesos - Control de Pases e Invitaciones", () => {
 
   test("debería permitir validar la entrada usando el pase PENDING de Madre de Rosa", async ({ page }) => {
     if (useRealApi) {
-      // Find Madre de Rosa row that has "Validar Entrada" button (PENDING status)
-      await page.waitForSelector("text=Madre de Rosa", { timeout: 10000 });
+      // Find the visitor row (dynamic name) with "Validar Entrada" button (PENDING status)
+      const visitorRegex = new RegExp(createdVisitorName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+      await page.waitForSelector(`text=${createdVisitorName}`, { timeout: 10000 });
 
-      const pendingRow = page.locator("tr", { hasText: /Madre de Rosa/i })
+      const pendingRow = page.locator("tr", { hasText: visitorRegex })
         .filter({ has: page.getByTitle("Validar Entrada") })
         .first();
 
@@ -253,9 +257,10 @@ test.describe("Módulo de Accesos - Control de Pases e Invitaciones", () => {
   test("debería permitir registrar la salida de un pase ACTIVE", async ({ page }) => {
     if (useRealApi) {
       // El pase fue validado como ACTIVE en el test anterior — registrar salida
-      await page.waitForSelector("text=Madre de Rosa", { timeout: 10000 });
+      const visitorRegex = new RegExp(createdVisitorName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+      await page.waitForSelector(`text=${createdVisitorName}`, { timeout: 10000 });
 
-      const row = page.locator("tr", { hasText: /Madre de Rosa/i })
+      const row = page.locator("tr", { hasText: visitorRegex })
         .filter({ has: page.getByTitle("Registrar Salida") })
         .first();
 

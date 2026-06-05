@@ -1,0 +1,164 @@
+═══════════════════════════════════════════════════════════════
+  AXZY CHECK — Sincronización API ↔ WEB (Payments)
+  Generado: 03 Jun 2026
+═══════════════════════════════════════════════════════════════
+
+API Base: /api/v1/payments
+WEB Base: src/modules/payments/
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. FEES (Catálogo de Cuotas)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ API                         WEB Service                  WEB Page
+ ─────────────────────────────────────────────────────────────────
+ GET    /fees                 getFees()                    FeesPage
+ POST   /fees/datatable       getPaginatedFees()           FeesPage
+ GET    /fees/:id             getFeeById()                 —
+ POST   /fees                 createFee()                  FeesPage
+ PUT    /fees/:id             updateFee()                  FeesPage
+ DELETE /fees/:id             deleteFee()                  FeesPage
+
+ ✅ Sincronizado completo
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2. RESIDENT FEES (Asignación de Cuotas)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ API                         WEB Service                  WEB Page
+ ─────────────────────────────────────────────────────────────────
+ GET    /resident-fees        getResidentFees()            ResidentDetailPage
+                              getResidentFeesByFeeId()     BulkAssignFeeDialog
+ POST   /resident-fees/dt     getPaginatedResidentFees()   —
+ POST   /resident-fees        createResidentFee()          ResidentDetailPage
+ POST   /resident-fees/bulk   bulkAssignResidentFees()     BulkAssignFeeDialog
+ POST   /resident-fees/       bulkUnassignResidentFees()   BulkAssignFeeDialog
+        bulk-unassign
+ DELETE /resident-fees/:id    deleteResidentFee()          ResidentDetailPage
+
+ ✅ Sincronizado completo
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3. PAYMENTS (Pagos)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ API                         WEB Service                  WEB Page
+ ─────────────────────────────────────────────────────────────────
+ GET    /summary              getPaymentSummary()          PaymentsPage
+ POST   /datatable            getPaginatedPayments()       PaymentsPage
+ POST   /                     createPayment()              PaymentsPage
+ GET    /:id                  getPaymentById()             PaymentReceiptPage
+ PUT    /:id                  updatePayment()              PaymentsPage
+ POST   /:id/checkout         createPaymentCheckout()      PaymentsPage, 
+                                                            ResidentDetailPage
+ DELETE /:id                  deletePayment()              PaymentsPage
+
+ ✅ Sincronizado completo (creación vía admin + checkout Stripe)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4. RECEIPT PDF (Comprobantes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ API                         WEB Service                  WEB Page
+ ─────────────────────────────────────────────────────────────────
+ GET    /receipt/:id/download  downloadReceipt()            PaymentsPage, 
+                                                             ResidentDetailPage
+
+ ✅ Sincronizado completo
+    API: generateReceiptPDF (pdfkit → Buffer, on-the-fly)
+    WEB: axios blob download (incluye Authorization header)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5. STRIPE WEBHOOK (fuera de routes, montado directo)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ API                         WEB Service
+ ─────────────────────────────────────────────────────────────────
+ POST /api/v1/payments/       — (server-side only)
+       webhook
+
+ ✅ Sin contraparte WEB (es servidor→servidor)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6. COMPONENTES COMPARTIDOS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ Componente                  Usado en
+ ─────────────────────────────────────────────────────────────────
+ PaymentFormDialog           PaymentsPage (admin: nuevo pago)
+ BulkAssignFeeDialog         PaymentsPage (admin: asignación masiva)
+ PaymentSummaryCards          PaymentsPage (admin + residente)
+
+ ✅ Reutilizables
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7. VISTAS POR ROL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ ADMIN / LIDER:
+  • payments/   → PaymentsPage (ITDataTable con columnas)
+  • fees/       → FeesPage (CRUD + ITDataTable)
+  • residents/:id → ResidentDetailPage (Estado de Cuenta con
+                     Cargos Únicos + Cuotas Recurrentes)
+
+ RESIDENTE (RESDN):
+  • payments/   → PaymentsPage (vista card:
+                    Cargos Únicos + Cuotas por Mes agrupadas)
+  • Sin acceso a fees/ ni residentes/
+
+ ✅ Ambas vistas sincronizan con los mismos endpoints
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8. BACKEND SERVICES (API)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ Archivo                     Responsabilidad
+ ─────────────────────────────────────────────────────────────────
+ payments.service.ts         Lógica de negocio: CRUD fees,
+                              payments, resident-fees, summary,
+                              datatables, checkout, receipt PDF
+ payments.receipt.service.ts Generación PDF con pdfkit
+                              (estilo boucher, slate, 1 página)
+ stripe.service.ts           Integración Stripe: sesiones
+                              checkout, webhook
+
+ ✅ Todos los servicios activos y funcionales
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9. DATA MODEL (Prisma)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ Fee          → id, name, description, amount, type (ONE_TIME|MONTHLY),
+                dueDate?, active
+ ResidentFee  → id, residentId, feeId, active, startDate, endDate?
+ Payment      → id, residentId, feeId, amount, status, period?,
+                stripePaymentIntentId?, s3ReceiptUrl?, paidAt
+ PaymentLog   → id, paymentId, residentId, action, statusFrom,
+                statusTo, amount, notes
+
+ 📌 Notas:
+  • s3ReceiptUrl ya no se usa (PDF se genera on-the-fly)
+  • SubscriptionPlan y ResidentSubscription existen en schema
+    pero NO se usan (subscriptions removidas de UI/routes)
+  • period = YYYY-MM para payments mensuales recurrentes
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10. ESTADO GENERAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ Módulo       | API | WEB | Sync
+ ─────────────┼─────┼─────┼──────
+ Fees         │ ✅  │ ✅  │ 100%
+ ResidentFees │ ✅  │ ✅  │ 100%
+ Payments     │ ✅  │ ✅  │ 100%
+ Receipt PDF  │ ✅  │ ✅  │ 100%
+ Stripe WH    │ ✅  │ N/A │ 100% (server-only)
+
+ 🔴 Issues conocidos:
+  • S3 bloqueado (AWSCompromisedKeyQuarantineV3) — PDF va
+    directo desde API sin S3
+  • No hay test de integración E2E del flujo completo:
+    pay → webhook → PDF → email
+  • Migration SQL creada manual, falta aplicar en Railway
+
+═══════════════════════════════════════════════════════════════

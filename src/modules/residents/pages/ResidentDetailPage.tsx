@@ -27,6 +27,7 @@ import {
   FaQrcode,
   FaTrash,
   FaUser,
+  FaDownload,
   FaUserFriends,
 } from "react-icons/fa";
 import { useDispatch } from "react-redux";
@@ -34,20 +35,18 @@ import { useNavigate, useParams } from "react-router-dom";
 import * as Yup from "yup";
 import { updateUser, resetPassword } from "../../users/services/UserService";
 import {
-  createCheckoutSession,
   createFee,
   createPayment,
   createPaymentCheckout,
   getPaginatedPayments,
-  getSubscriptionPlans,
   PaymentResponse,
-  SubscriptionPlanResponse,
   ResidentFeeResponse,
   getResidentFees,
   createResidentFee,
   deleteResidentFee,
   getFees,
   FeeResponse,
+  downloadReceipt,
 } from "../../payments/services/PaymentsService";
 import {
   createContact,
@@ -74,7 +73,7 @@ export const ResidentDetailPage: React.FC = () => {
   const [resident, setResident] = useState<ResidentResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const [plans, setPlans] = useState<SubscriptionPlanResponse[]>([]);
+
   const [loadingCheckout, setLoadingCheckout] = useState(false);
 
   // Contacts State
@@ -120,26 +119,42 @@ export const ResidentDetailPage: React.FC = () => {
           active: true,
         });
         if (feeRes.success && feeRes.data) {
-          await createPayment({
+          const payRes = await createPayment({
             residentId: resident.id,
             feeId: feeRes.data.id,
             amount: Number(values.amount),
             status: "PENDING",
           });
+          if (payRes.success) {
+            dispatch(
+              showToast({
+                message: "Cargo generado correctamente",
+                type: "success",
+              }),
+            );
+            resetForm();
+            setIsAddingPayment(false);
+            fetchPayments();
+          } else {
+            dispatch(
+              showToast({
+                message: payRes.messages?.[0] || "Error al crear el pago",
+                type: "error",
+              }),
+            );
+          }
+        } else {
           dispatch(
             showToast({
-              message: "Cargo generado correctamente",
-              type: "success",
+              message: feeRes.messages?.[0] || "Error al crear la cuota",
+              type: "error",
             }),
           );
-          resetForm();
-          setIsAddingPayment(false);
-          fetchPayments();
         }
-      } catch (error) {
-        dispatch(
-          showToast({ message: "Error al generar cargo", type: "error" }),
-        );
+      } catch (error: any) {
+        const apiMsg =
+          error?.messages?.[0] || error?.message || "Error al generar cargo";
+        dispatch(showToast({ message: apiMsg, type: "error" }));
       }
     },
   });
@@ -160,7 +175,9 @@ export const ResidentDetailPage: React.FC = () => {
     validationSchema: Yup.object({
       name: Yup.string().required("El nombre es requerido"),
       lastName: Yup.string().optional(),
-      username: Yup.string().required("El nombre de usuario es requerido").min(3, "Mínimo 3 caracteres"),
+      username: Yup.string()
+        .required("El nombre de usuario es requerido")
+        .min(3, "Mínimo 3 caracteres"),
     }),
     onSubmit: async (values) => {
       if (!resident?.user?.id) return;
@@ -197,7 +214,9 @@ export const ResidentDetailPage: React.FC = () => {
       confirmPassword: "",
     },
     validationSchema: Yup.object({
-      password: Yup.string().min(6, "Mínimo 6 caracteres").required("Requerido"),
+      password: Yup.string()
+        .min(6, "Mínimo 6 caracteres")
+        .required("Requerido"),
       confirmPassword: Yup.string()
         .oneOf([Yup.ref("password")], "Las contraseñas no coinciden")
         .required("Requerido"),
@@ -225,7 +244,10 @@ export const ResidentDetailPage: React.FC = () => {
         }
       } catch (error) {
         dispatch(
-          showToast({ message: "Error al restablecer contraseña", type: "error" }),
+          showToast({
+            message: "Error al restablecer contraseña",
+            type: "error",
+          }),
         );
       }
     },
@@ -242,7 +264,9 @@ export const ResidentDetailPage: React.FC = () => {
 
     setTogglingActive(true);
     try {
-      const res = await updateUser(resident.user.id, { active: newActiveState });
+      const res = await updateUser(resident.user.id, {
+        active: newActiveState,
+      });
       if (res.success) {
         dispatch(
           showToast({
@@ -300,18 +324,12 @@ export const ResidentDetailPage: React.FC = () => {
     if (!resident?.id) return;
     setPaymentsLoading(true);
     try {
-      const [resPayments, resPlans] = await Promise.all([
-        getPaginatedPayments({
-          page: 1,
-          limit: 100,
-          filters: { residentId: resident.id },
-        }),
-        getSubscriptionPlans(),
-      ]);
+      const resPayments = await getPaginatedPayments({
+        page: 1,
+        limit: 100,
+        filters: { residentId: resident.id },
+      });
       setPayments(resPayments.data || []);
-      if (resPlans.success && resPlans.data) {
-        setPlans(resPlans.data);
-      }
     } finally {
       setPaymentsLoading(false);
     }
@@ -319,24 +337,37 @@ export const ResidentDetailPage: React.FC = () => {
 
   const fetchResidentFees = async () => {
     if (!resident?.id) return;
-    const res = await getResidentFees(resident.id);
-    if (res.success && res.data) {
-      setResidentFees(res.data);
+    try {
+      const res = await getResidentFees(resident.id);
+      if (res.success && res.data) {
+        setResidentFees(res.data);
+      }
+    } catch {
+      /* ignore */
     }
   };
 
   const fetchFeesList = async () => {
-    const res = await getFees();
-    if (res.success && res.data) {
-      setFeesList(res.data);
+    try {
+      const res = await getFees();
+      if (res.success && res.data) {
+        setFeesList(res.data);
+      }
+    } catch {
+      /* ignore */
     }
   };
 
   const handleAssignFee = async () => {
     if (!resident?.id || !selectedFeeId) return;
-    const res = await createResidentFee({ residentId: resident.id, feeId: selectedFeeId });
+    const res = await createResidentFee({
+      residentId: resident.id,
+      feeId: selectedFeeId,
+    });
     if (res.success) {
-      dispatch(showToast({ message: "Cuota asignada correctamente", type: "success" }));
+      dispatch(
+        showToast({ message: "Cuota asignada correctamente", type: "success" }),
+      );
       setIsAssigningFee(false);
       setSelectedFeeId("");
       fetchResidentFees();
@@ -354,26 +385,9 @@ export const ResidentDetailPage: React.FC = () => {
       setFeeToUnassignId(null);
       fetchResidentFees();
     } else {
-      dispatch(showToast({ message: "Error al desasignar cuota", type: "error" }));
-    }
-  };
-
-  const handleSubscribe = async (planId: string) => {
-    if (!resident?.id) return;
-    setLoadingCheckout(true);
-    try {
-      const res = await createCheckoutSession(resident.id, planId);
-      if (res.success && res.data?.url) {
-        window.location.href = res.data.url;
-      } else {
-        dispatch(
-          showToast({ message: "Error al iniciar Checkout", type: "error" }),
-        );
-      }
-    } catch (error) {
-      dispatch(showToast({ message: "Error en el servidor", type: "error" }));
-    } finally {
-      setLoadingCheckout(false);
+      dispatch(
+        showToast({ message: "Error al desasignar cuota", type: "error" }),
+      );
     }
   };
 
@@ -392,6 +406,14 @@ export const ResidentDetailPage: React.FC = () => {
       dispatch(showToast({ message: "Error en el servidor", type: "error" }));
     } finally {
       setLoadingCheckout(false);
+    }
+  };
+
+  const handleDownloadReceipt = async (paymentId: string) => {
+    try {
+      await downloadReceipt(paymentId);
+    } catch {
+      dispatch(showToast({ message: "Comprobante no disponible", type: "info" }));
     }
   };
 
@@ -480,7 +502,9 @@ export const ResidentDetailPage: React.FC = () => {
     },
   });
 
-  const [contactToDeleteId, setContactToDeleteId] = useState<string | null>(null);
+  const [contactToDeleteId, setContactToDeleteId] = useState<string | null>(
+    null,
+  );
 
   const handleDeleteContact = (contactId: string) => {
     setContactToDeleteId(contactId);
@@ -755,7 +779,8 @@ export const ResidentDetailPage: React.FC = () => {
                                   Nombre Completo
                                 </ITText>
                                 <ITText className="text-sm font-medium text-slate-900">
-                                  {resident.user.name} {resident.user.lastName || ""}
+                                  {resident.user.name}{" "}
+                                  {resident.user.lastName || ""}
                                 </ITText>
                               </div>
                             </div>
@@ -788,7 +813,9 @@ export const ResidentDetailPage: React.FC = () => {
                                     : "border-emerald-200 text-emerald-600 hover:bg-emerald-50"
                                 }`}
                               >
-                                {resident.user.active ? "Desactivar" : "Activar"}
+                                {resident.user.active
+                                  ? "Desactivar"
+                                  : "Activar"}
                               </ITButton>
                             </div>
                           </div>
@@ -799,7 +826,8 @@ export const ResidentDetailPage: React.FC = () => {
                               Sin cuenta vinculada
                             </ITText>
                             <ITText className="text-xs text-slate-400 mt-1 block max-w-[200px] mx-auto">
-                              Este residente no tiene un usuario para acceder al portal.
+                              Este residente no tiene un usuario para acceder al
+                              portal.
                             </ITText>
                           </div>
                         )}
@@ -823,6 +851,7 @@ export const ResidentDetailPage: React.FC = () => {
                           size="small"
                           variant="filled"
                           color="primary"
+                          className="!flex !flex-row !items-center !gap-2"
                         >
                           <FaPlus size={12} /> Nuevo Contacto
                         </ITButton>
@@ -1020,15 +1049,15 @@ export const ResidentDetailPage: React.FC = () => {
                                 {c.relationship}
                               </ITText>
 
-                    <ITButton
-                      onClick={() => setConfiguringContact(c)}
-                      size="small"
-                      variant="filled"
-                      color="primary"
-                      className="w-full"
-                    >
-                      Crear Pase
-                    </ITButton>
+                              <ITButton
+                                onClick={() => setConfiguringContact(c)}
+                                size="small"
+                                variant="filled"
+                                color="primary"
+                                className="w-full"
+                              >
+                                Crear Pase
+                              </ITButton>
                             </div>
                           ))
                         )}
@@ -1042,32 +1071,43 @@ export const ResidentDetailPage: React.FC = () => {
                 label: "Estado de Cuenta",
                 content: (
                   <div className="pt-6 animate-in fade-in duration-300">
-                    <div className="flex justify-between items-center mb-8">
-                      <ITText className="text-base font-semibold text-slate-900">
-                        Movimientos y Pagos
-                      </ITText>
-                      {!isAddingPayment && (
-                  <ITButton
-                    onClick={() => setIsAddingPayment(true)}
-                    size="small"
-                    variant="filled"
-                    color="primary"
-                  >
-                    <FaPlus size={12} /> Nuevo Cargo
-                        </ITButton>
-                      )}
-                    </div>
 
-                    {isAddingPayment && (
-                      <div className="bg-white p-6 md:p-8 rounded-xl border border-slate-200 mb-8">
-                        <ITText className="font-semibold text-lg text-slate-900 mb-6">
-                          Generar Cargo Manual
-                        </ITText>
-                        <form
-                          onSubmit={paymentFormik.handleSubmit}
-                          className="space-y-5"
+                    {/* ════════════════════════════════════════════════
+                       CARGOS ÚNICOS
+                    ════════════════════════════════════════════════ */}
+                    <div className="mb-12">
+                      <div className="flex justify-between items-center mb-6">
+                        <div>
+                          <ITText className="text-base font-semibold text-slate-900">
+                            Cargos Únicos
+                          </ITText>
+                          <ITText className="text-xs text-slate-400 mt-0.5">
+                            Cobros de una sola vez
+                          </ITText>
+                        </div>
+                        {!isAddingPayment && (
+                          <ITButton
+                            onClick={() => setIsAddingPayment(true)}
+                            size="small"
+                            variant="filled"
+                            color="primary"
+                            className="!flex !flex-row !items-center !gap-2"
+                          >
+                            <FaPlus size={12} /> Nuevo Cargo
+                          </ITButton>
+                        )}
+                      </div>
+
+                      {isAddingPayment && (
+                        <ITDialog
+                          isOpen={isAddingPayment}
+                          onClose={() => setIsAddingPayment(false)}
+                          title="Generar Cargo Manual"
                         >
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <form
+                            onSubmit={paymentFormik.handleSubmit}
+                            className="p-6 space-y-5"
+                          >
                             <div className="flex flex-col gap-2">
                               <ITText className="text-sm font-medium text-slate-700">
                                 Concepto
@@ -1089,45 +1129,153 @@ export const ResidentDetailPage: React.FC = () => {
                                 name="amount"
                                 type="number"
                                 placeholder="0.00"
+                                currencyFormat
                                 value={paymentFormik.values.amount}
                                 onChange={paymentFormik.handleChange}
                                 onBlur={paymentFormik.handleBlur}
                                 error={paymentFormik.errors.amount as string}
                               />
                             </div>
-                          </div>
-                          <div className="flex justify-end gap-3 pt-6">
-                            <ITButton
-                              type="button"
-                              variant="ghost"
-                              onClick={() => setIsAddingPayment(false)}
-                              className="px-6 text-slate-500 font-medium hover:bg-slate-50 !rounded-lg"
-                            >
-                              Cancelar
-                            </ITButton>
-                            <ITButton
-                              type="submit"
-                              className="px-8 !rounded-lg bg-slate-900 text-white hover:bg-slate-800 font-medium"
-                            >
-                              Generar Cargo
-                            </ITButton>
-                          </div>
-                        </form>
-                      </div>
-                    )}
+                            <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                              <ITButton
+                                type="button"
+                                variant="ghost"
+                                onClick={() => setIsAddingPayment(false)}
+                                className="px-6 text-slate-500 font-medium hover:bg-slate-50 !rounded-lg"
+                              >
+                                Cancelar
+                              </ITButton>
+                              <ITButton
+                                type="submit"
+                                className="px-8 !rounded-lg bg-slate-900 text-white hover:bg-slate-800 font-medium"
+                              >
+                                Generar Cargo
+                              </ITButton>
+                            </div>
+                          </form>
+                        </ITDialog>
+                      )}
 
-                    {/* RESIDENT FEE ASSIGNMENTS */}
-                    <div className="mb-10">
-                      <div className="flex justify-between items-center mb-4">
-                        <ITText className="text-sm font-semibold text-slate-900">
-                          Cuotas Asignadas
-                        </ITText>
+                      {paymentsLoading ? (
+                        <div className="flex justify-center py-20">
+                          <div className="w-8 h-8 border-2 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      ) : payments.filter((p) => p.fee?.type === "ONE_TIME").length === 0 ? (
+                        <div className="py-16 text-center flex flex-col items-center justify-center border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+                          <ITText className="text-slate-500 font-medium text-sm">
+                            Sin cargos únicos
+                          </ITText>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {payments
+                            .filter((p) => p.fee?.type === "ONE_TIME")
+                            .map((p) => (
+                              <div
+                                key={p.id}
+                                className="bg-white p-4 rounded-xl border border-slate-100 flex items-center justify-between hover:border-slate-200 transition-colors"
+                              >
+                                <div className="flex items-center gap-4">
+                                  <div
+                                    className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                                      p.status === "PAID"
+                                        ? "bg-emerald-50 text-emerald-600"
+                                        : p.status === "PENDING"
+                                          ? "bg-amber-50 text-amber-600"
+                                          : "bg-red-50 text-red-600"
+                                    }`}
+                                  >
+                                    <FaMoneyBill size={15} />
+                                  </div>
+                                  <div>
+                                    <ITText className="font-semibold text-slate-900 text-sm">
+                                      {p.fee?.name}
+                                    </ITText>
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                      <ITText className="text-sm font-bold text-slate-700">
+                                        {formatCurrency(p.amount)}
+                                      </ITText>
+                                      {p.status === "PAID" && (
+                                        <>
+                                          <span className="w-1 h-1 rounded-full bg-emerald-400" />
+                                          <ITText className="text-emerald-600 text-[10px] font-bold font-mono tracking-widest uppercase">
+                                            Folio {p.id.slice(0, 8).toUpperCase()}
+                                          </ITText>
+                                        </>
+                                      )}
+                                    </div>
+                                    <ITText className="text-[10px] text-slate-400 mt-0.5">
+                                      {p.paidAt
+                                        ? `Pagado ${dayjs(p.paidAt).format("DD MMM YYYY")}`
+                                        : "Pendiente"}
+                                    </ITText>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <ITBadget
+                                    color={
+                                      p.status === "PAID"
+                                        ? "success"
+                                        : p.status === "PENDING"
+                                          ? "warning"
+                                          : "error"
+                                    }
+                                    size="small"
+                                    className="!rounded-full !px-2.5 font-medium text-[10px]"
+                                  >
+                                    {p.status === "PAID"
+                                      ? "Pagado"
+                                      : p.status === "PENDING"
+                                        ? "Pendiente"
+                                        : "Cancelado"}
+                                  </ITBadget>
+                                  {p.status === "PAID" && (
+                                    <ITButton
+                                      size="small"
+                                      variant="outlined"
+                                      onClick={() => handleDownloadReceipt(p.id)}
+                                      className="border-slate-200 text-slate-500 !px-2.5"
+                                      title="Descargar comprobante"
+                                    >
+                                      <FaDownload size={11} />
+                                    </ITButton>
+                                  )}
+                                  {p.status === "PENDING" && (
+                                    <ITButton
+                                      size="small"
+                                      onClick={() => handlePayFee(p.id)}
+                                      disabled={loadingCheckout}
+                                      className="!rounded-lg bg-slate-900 text-white hover:bg-slate-800 font-medium px-4 text-xs transition-colors"
+                                    >
+                                      Pagar ahora
+                                    </ITButton>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* ════════════════════════════════════════════════
+                       CUOTAS RECURRENTES
+                    ════════════════════════════════════════════════ */}
+                    <div>
+                      <div className="flex justify-between items-center mb-6">
+                        <div>
+                          <ITText className="text-base font-semibold text-slate-900">
+                            Cuotas Recurrentes
+                          </ITText>
+                          <ITText className="text-xs text-slate-400 mt-0.5">
+                            Mensualidades asignadas al residente
+                          </ITText>
+                        </div>
                         {!isAssigningFee && (
                           <ITButton
-                            onClick={() => { setIsAssigningFee(true); }}
+                            onClick={() => setIsAssigningFee(true)}
                             size="small"
                             variant="outlined"
-                            className="border-slate-200 text-slate-600"
+                            className="!flex !flex-row !items-center !gap-2 border-slate-200 text-slate-600"
                           >
                             <FaPlus size={10} /> Asignar Cuota
                           </ITButton>
@@ -1148,7 +1296,8 @@ export const ResidentDetailPage: React.FC = () => {
                               <option value="">-- Seleccionar --</option>
                               {feesList.map((f) => (
                                 <option key={f.id} value={f.id}>
-                                  {f.name} - {formatCurrency(f.amount)} ({f.type === "MONTHLY" ? "Mensual" : "Único"})
+                                  {f.name} - {formatCurrency(f.amount)} (
+                                  {f.type === "MONTHLY" ? "Mensual" : "Único"})
                                 </option>
                               ))}
                             </select>
@@ -1163,7 +1312,10 @@ export const ResidentDetailPage: React.FC = () => {
                             Guardar
                           </ITButton>
                           <ITButton
-                            onClick={() => { setIsAssigningFee(false); setSelectedFeeId(""); }}
+                            onClick={() => {
+                              setIsAssigningFee(false);
+                              setSelectedFeeId("");
+                            }}
                             size="small"
                             variant="ghost"
                           >
@@ -1173,164 +1325,128 @@ export const ResidentDetailPage: React.FC = () => {
                       )}
 
                       {residentFees.length === 0 ? (
-                        <ITText className="text-xs text-slate-400 mb-6">
-                          Sin cuotas asignadas
-                        </ITText>
+                        <div className="py-16 text-center flex flex-col items-center justify-center border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+                          <ITText className="text-slate-500 font-medium text-sm">
+                            Sin cuotas recurrentes asignadas
+                          </ITText>
+                        </div>
                       ) : (
-                        <div className="space-y-3 mb-6">
-                          {residentFees.map((rf) => (
-                            <div
-                              key={rf.id}
-                              className="bg-white p-4 rounded-xl border border-slate-100 flex items-center justify-between hover:border-slate-200 transition-colors"
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-slate-50 text-slate-600 flex items-center justify-center">
-                                  <FaMoneyBill size={14} />
-                                </div>
-                                <div>
-                                  <ITText className="font-medium text-slate-900 text-sm">
-                                    {rf.fee?.name}
-                                  </ITText>
-                                  <ITText className="text-xs text-slate-500">
-                                    {rf.fee ? formatCurrency(rf.fee.amount) : ""} · {rf.fee?.type === "MONTHLY" ? "Mensual" : "Único"}
-                                  </ITText>
-                                </div>
-                              </div>
-                              <ITButton
-                                size="small"
-                                variant="outlined"
-                                color="danger"
-                                onClick={() => setFeeToUnassignId(rf.id)}
-                                title="Desasignar"
+                        <div className="space-y-4">
+                          {residentFees.map((rf) => {
+                            const monthlyPays = payments.filter(
+                              (p) => p.feeId === rf.feeId && p.fee?.type === "MONTHLY"
+                            );
+                            const latestPay = monthlyPays[0];
+
+                            return (
+                              <div
+                                key={rf.id}
+                                className="bg-white p-4 rounded-xl border border-slate-100 hover:border-slate-200 transition-colors"
                               >
-                                <FaTrash size={10} />
-                              </ITButton>
-                            </div>
-                          ))}
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                                      <FaMoneyBill size={15} />
+                                    </div>
+                                    <div>
+                                      <ITText className="font-semibold text-slate-900 text-sm">
+                                        {rf.fee?.name}
+                                      </ITText>
+                                      <div className="flex items-center gap-2 mt-0.5">
+                                        <ITText className="font-bold text-slate-700 text-sm">
+                                          {rf.fee ? formatCurrency(rf.fee.amount) : ""}
+                                        </ITText>
+                                        <span className="text-slate-300 text-[10px]">•</span>
+                                        <ITText className="text-[10px] text-slate-400 font-medium">
+                                          Mensual
+                                        </ITText>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <ITButton
+                                    size="small"
+                                    variant="outlined"
+                                    color="danger"
+                                    onClick={() => setFeeToUnassignId(rf.id)}
+                                    title="Desasignar"
+                                  >
+                                    <FaTrash size={10} />
+                                  </ITButton>
+                                </div>
+
+                                {/* Monthly payments for this fee */}
+                                {monthlyPays.length > 0 && (
+                                  <div className="mt-4 pt-3 border-t border-slate-50 space-y-2">
+                                    {monthlyPays.slice(0, 6).map((p) => (
+                                      <div
+                                        key={p.id}
+                                        className="flex items-center justify-between py-2 px-3 rounded-lg bg-slate-50/70"
+                                      >
+                                        <div className="flex items-center gap-3">
+                                          <ITText className="text-xs font-medium text-slate-600 min-w-[90px]">
+                                            {p.period
+                                              ? dayjs(p.period, "YYYY-MM").format("MMMM YYYY")
+                                              : "—"}
+                                          </ITText>
+                                          <ITText className="text-xs font-bold text-slate-700">
+                                            {formatCurrency(p.amount)}
+                                          </ITText>
+                                          {p.status === "PAID" && (
+                                            <ITText className="text-emerald-600 text-[9px] font-bold font-mono tracking-widest uppercase">
+                                              Folio {p.id.slice(0, 8).toUpperCase()}
+                                            </ITText>
+                                          )}
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                          <ITBadget
+                                            color={
+                                              p.status === "PAID"
+                                                ? "success"
+                                                : p.status === "PENDING"
+                                                  ? "warning"
+                                                  : "error"
+                                            }
+                                            size="small"
+                                            className="!rounded-full !px-2 font-medium text-[9px]"
+                                          >
+                                            {p.status === "PAID"
+                                              ? "Pagado"
+                                              : p.status === "PENDING"
+                                                ? "Pendiente"
+                                                : "Cancelado"}
+                                          </ITBadget>
+                                          {p.status === "PAID" && (
+                                            <ITButton
+                                              size="small"
+                                              variant="outlined"
+                                              onClick={() => handleDownloadReceipt(p.id)}
+                                              className="border-slate-200 text-slate-500 !px-2"
+                                              title="Descargar comprobante"
+                                            >
+                                              <FaDownload size={10} />
+                                            </ITButton>
+                                          )}
+                                          {p.status === "PENDING" && (
+                                            <ITButton
+                                              size="small"
+                                              onClick={() => handlePayFee(p.id)}
+                                              disabled={loadingCheckout}
+                                              className="!rounded-lg bg-slate-900 text-white hover:bg-slate-800 font-medium px-3 text-[10px] transition-colors whitespace-nowrap"
+                                            >
+                                              Pagar ahora
+                                            </ITButton>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
-
-                    {/* STRIPE SUBSCRIPTIONS */}
-                    {plans.length > 0 && (
-                      <div className="mb-10">
-                        <ITText className="text-sm font-medium text-slate-500 mb-4">
-                          Suscripciones Disponibles
-                        </ITText>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                          {plans.map((plan) => (
-                            <div
-                              key={plan.id}
-                              className="bg-white p-6 rounded-xl border border-slate-200 flex flex-col items-start hover:border-slate-400 transition-colors"
-                            >
-                              <div className="w-10 h-10 rounded-full bg-slate-50 text-slate-600 flex items-center justify-center mb-5">
-                                <FaMoneyBill size={18} />
-                              </div>
-                              <ITText className="font-semibold text-slate-900 text-base mb-2">
-                                {plan.name}
-                              </ITText>
-                              <ITText className="text-2xl font-bold text-slate-900 mb-6">
-                                {formatCurrency(plan.amount)}
-                              </ITText>
-                              <ITButton
-                                onClick={() => handleSubscribe(plan.id)}
-                                disabled={loadingCheckout}
-                                size="small"
-                                className="w-full !rounded-lg bg-slate-900 text-white hover:bg-slate-800 font-medium transition-colors"
-                              >
-                                {loadingCheckout
-                                  ? "Procesando..."
-                                  : "Suscribirse"}
-                              </ITButton>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {paymentsLoading ? (
-                      <div className="flex justify-center py-20">
-                        <div className="w-8 h-8 border-2 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        <ITText className="text-sm font-medium text-slate-500 mb-4">
-                          Historial de Cargos
-                        </ITText>
-                        {payments.length === 0 ? (
-                          <div className="py-20 text-center flex flex-col items-center justify-center border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
-                            <ITText className="text-slate-500 font-medium text-sm">
-                              No hay cobros registrados
-                            </ITText>
-                          </div>
-                        ) : (
-                          payments.map((p) => (
-                            <div
-                              key={p.id}
-                              className="bg-white p-5 rounded-xl border border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 hover:border-slate-200 transition-colors"
-                            >
-                              <div className="flex items-center gap-4 w-full md:w-auto">
-                                <div
-                                  className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                                    p.status === "PAID"
-                                      ? "bg-green-50 text-green-600"
-                                      : p.status === "PENDING"
-                                        ? "bg-amber-50 text-amber-600"
-                                        : "bg-red-50 text-red-600"
-                                  }`}
-                                >
-                                  <FaMoneyBill size={16} />
-                                </div>
-                                <div>
-                                  <ITText className="font-semibold text-slate-900 text-sm mb-1">
-                                    {p.fee?.name}
-                                  </ITText>
-                                  <ITText className="text-xs text-slate-500">
-                                    <span className="font-medium text-slate-700 mr-2">
-                                      {formatCurrency(p.amount)}
-                                    </span>
-                                    •{" "}
-                                    {p.paidAt
-                                      ? `Pagado el ${dayjs(p.paidAt).format("DD MMM YYYY")}`
-                                      : "Pendiente de pago"}
-                                  </ITText>
-                                </div>
-                              </div>
-                              <div className="flex flex-col sm:flex-row items-end md:items-center gap-4 w-full md:w-auto">
-                                <ITBadget
-                                  color={
-                                    p.status === "PAID"
-                                      ? "success"
-                                      : p.status === "PENDING"
-                                        ? "warning" // Asumiendo que tu UI system tiene warning o similar, sino default a primary
-                                        : "error"
-                                  }
-                                  size="small"
-                                  className="!rounded-full !px-3 font-medium"
-                                >
-                                  {p.status === "PAID"
-                                    ? "Pagado"
-                                    : p.status === "PENDING"
-                                      ? "Pendiente"
-                                      : "Cancelado"}
-                                </ITBadget>
-
-                                {p.status === "PENDING" && (
-                                  <ITButton
-                                    size="small"
-                                    onClick={() => handlePayFee(p.id)}
-                                    disabled={loadingCheckout}
-                                    className="!rounded-lg bg-slate-900 text-white hover:bg-slate-800 font-medium px-5 w-full sm:w-auto transition-colors"
-                                  >
-                                    Pagar ahora
-                                  </ITButton>
-                                )}
-                              </div>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    )}
                   </div>
                 ),
               },
@@ -1357,7 +1473,10 @@ export const ResidentDetailPage: React.FC = () => {
           title="Editar Usuario del Residente"
           className="!w-full !max-w-lg"
         >
-          <form onSubmit={editUserFormik.handleSubmit} className="p-6 space-y-6">
+          <form
+            onSubmit={editUserFormik.handleSubmit}
+            className="p-6 space-y-6"
+          >
             <div className="space-y-4">
               <div className="flex flex-col gap-2">
                 <ITText className="text-sm font-medium text-slate-700">
@@ -1369,7 +1488,11 @@ export const ResidentDetailPage: React.FC = () => {
                   value={editUserFormik.values.name}
                   onChange={editUserFormik.handleChange}
                   onBlur={editUserFormik.handleBlur}
-                  error={editUserFormik.touched.name ? editUserFormik.errors.name : undefined}
+                  error={
+                    editUserFormik.touched.name
+                      ? editUserFormik.errors.name
+                      : undefined
+                  }
                 />
               </div>
 
@@ -1383,7 +1506,11 @@ export const ResidentDetailPage: React.FC = () => {
                   value={editUserFormik.values.lastName}
                   onChange={editUserFormik.handleChange}
                   onBlur={editUserFormik.handleBlur}
-                  error={editUserFormik.touched.lastName ? editUserFormik.errors.lastName : undefined}
+                  error={
+                    editUserFormik.touched.lastName
+                      ? editUserFormik.errors.lastName
+                      : undefined
+                  }
                 />
               </div>
 
@@ -1397,7 +1524,11 @@ export const ResidentDetailPage: React.FC = () => {
                   value={editUserFormik.values.username}
                   onChange={editUserFormik.handleChange}
                   onBlur={editUserFormik.handleBlur}
-                  error={editUserFormik.touched.username ? editUserFormik.errors.username : undefined}
+                  error={
+                    editUserFormik.touched.username
+                      ? editUserFormik.errors.username
+                      : undefined
+                  }
                 />
               </div>
             </div>
@@ -1430,13 +1561,17 @@ export const ResidentDetailPage: React.FC = () => {
           title="Cambiar Contraseña"
           className="!w-full !max-w-lg"
         >
-          <form onSubmit={resetPasswordFormik.handleSubmit} className="p-6 space-y-6">
+          <form
+            onSubmit={resetPasswordFormik.handleSubmit}
+            className="p-6 space-y-6"
+          >
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-4">
               <ITText className="text-xs text-slate-500 block mb-1">
                 Usuario objetivo:
               </ITText>
               <ITText className="text-sm font-semibold text-slate-900 block">
-                @{resident.user.username} ({resident.user.name} {resident.user.lastName})
+                @{resident.user.username} ({resident.user.name}{" "}
+                {resident.user.lastName})
               </ITText>
             </div>
 
@@ -1452,7 +1587,11 @@ export const ResidentDetailPage: React.FC = () => {
                   value={resetPasswordFormik.values.password}
                   onChange={resetPasswordFormik.handleChange}
                   onBlur={resetPasswordFormik.handleBlur}
-                  error={resetPasswordFormik.touched.password ? resetPasswordFormik.errors.password : undefined}
+                  error={
+                    resetPasswordFormik.touched.password
+                      ? resetPasswordFormik.errors.password
+                      : undefined
+                  }
                 />
               </div>
 
@@ -1467,7 +1606,11 @@ export const ResidentDetailPage: React.FC = () => {
                   value={resetPasswordFormik.values.confirmPassword}
                   onChange={resetPasswordFormik.handleChange}
                   onBlur={resetPasswordFormik.handleBlur}
-                  error={resetPasswordFormik.touched.confirmPassword ? resetPasswordFormik.errors.confirmPassword : undefined}
+                  error={
+                    resetPasswordFormik.touched.confirmPassword
+                      ? resetPasswordFormik.errors.confirmPassword
+                      : undefined
+                  }
                 />
               </div>
             </div>
@@ -1502,7 +1645,8 @@ export const ResidentDetailPage: React.FC = () => {
         >
           <div className="p-6 space-y-6">
             <ITText className="text-sm text-slate-600">
-              ¿Seguro de {resident.user.active ? "desactivar" : "activar"} a este usuario?
+              ¿Seguro de {resident.user.active ? "desactivar" : "activar"} a
+              este usuario?
             </ITText>
 
             <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">

@@ -305,8 +305,9 @@ const ComplaintsPage = () => {
                 variant="filled"
                 color="primary"
                 onClick={() => setIsCreateOpen(true)}
+                className="!flex !flex-row !items-center !gap-2"
               >
-                <FaPlus className="mr-2" /> Nueva Queja
+                <FaPlus size={12} /> Nueva Queja
               </ITButton>
             )}
           </div>

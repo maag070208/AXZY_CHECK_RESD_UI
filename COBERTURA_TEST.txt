@@ -1,0 +1,112 @@
+═══════════════════════════════════════════════════════════════
+  AXZY CHECK WEB — Cobertura de Tests
+  Generado: 03 Jun 2026
+═══════════════════════════════════════════════════════════════
+
+Total: 131 tests (unit/integración + e2e)
+  • 22 módulos con tests
+  •  1 módulo SIN tests
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. UNIT / INTEGRACIÓN (Vitest)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ Módulo           Tests  Archivo
+ ──────────────────────────────────────────────────────────────
+ accesses            4  AccessesPage.test.tsx
+ auth                4  LoginPage.test.tsx
+                     4  RegisterPage.test.tsx
+ complaints          2  ComplaintsPage.test.tsx
+ guards              3  GuardsPage.test.tsx
+ home                3  HomePage.test.tsx
+ incidents           3  IncidentsPage.test.tsx
+ kardex              1  KardexPage.test.tsx
+ locations           1  LocationsPage.test.tsx
+ maintenances        1  MaintenancesPage.test.tsx
+ payments            4  FeesPage.test.tsx
+                     5  PaymentsPage.test.tsx
+                     3  PaymentFormDialog.test.tsx
+ properties          4  PropertiesPage.test.tsx
+ residents           3  ResidentsPage.test.tsx
+                     3  ResidentContactsDialog.test.tsx
+ rounds              1  RoundDetailPage.test.tsx
+                     1  RoundsPage.test.tsx
+ routes              1  CreateRoutePage.test.tsx
+                     1  RoutesPage.test.tsx
+ schedules           1  SchedulesPage.test.tsx
+ settings            1  SettingsPage.test.tsx
+ users               1  UsersPage.test.tsx
+ ──────────────────────────────────────────────────────────────
+                55  tests  (23 archivos)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2. E2E (Playwright)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Archivo                Tests
+  ──────────────────────────────────────────────────────────────
+  accesses.spec.ts         9
+  fees.spec.ts             3
+  guards.spec.ts           7
+  home.spec.ts             3
+  incidents.spec.ts        4
+  kardex.spec.ts           3
+  locations.spec.ts        6
+  login.spec.ts            3
+  maintenances.spec.ts     3
+  payments.spec.ts         4
+  properties.spec.ts       8
+  residents.spec.ts        7
+  schedules.spec.ts        7
+  users.spec.ts            9
+  ──────────────────────────────────────────────────────────────
+                    76  tests  (14 archivos)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3. MÓDULOS SIN NINGÚN TEST
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ Módulo            Páginas  Componentes
+ ──────────────────────────────────────────────────────────────
+ reports           1 page   1 modal    Sin test
+ zones             0 pages  1 modal    Sin test
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4. DETALLE POR MÓDULO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Módulo            Pages  Comps  Tests     Cobertura
+  ──────────────────────────────────────────────────────────────
+  accesses             2      0    4 + E2E  ✅
+  auth                 4      2    8        ✅
+  complaints           2      0    2        ✅
+  guards               2      2    3 + E2E  ✅
+  home                 2      1    3 + E2E  ✅
+  incidents            2      1    3 + E2E  ✅
+  kardex               2      1    1 + E2E  ✅
+  locations            2      2    1 + E2E  ✅
+  maintenances         2      1    1 + E2E  ✅
+  payments             5      4   12 + E2E ✅
+  properties           2      1    4 + E2E  ✅
+  reports              1      1    0        ❌
+  residents            4      4    6 + E2E  ✅
+  rounds               4      0    2        ✅
+  routes               4      0    2        ✅
+  schedules            2      0    1 + E2E  ✅
+  settings             2      0    1        ✅
+  users                2      2    1 + E2E  ✅
+  zones                0      1    0        ❌
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5. GAPS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ 🟡 reports — ReportsPage + AperturaCierreReportModal sin test
+ 🟡 zones   — ZonesModal sin test
+ 🟡 La mayoría de módulos tienen 1 solo test de smoke
+     (renders without crashing). Cobertura funcional baja.
+ 🟡 Payments: 12 tests vs 5 pages + 4 components — bien, pero
+     faltan tests de ResidentDetailPage, AssignFeesDialog, etc.
+ 🟡 No hay tests de stores (Zustand) ni hooks
+
+═══════════════════════════════════════════════════════════════

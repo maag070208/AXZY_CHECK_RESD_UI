@@ -46,9 +46,9 @@ axiosInstance.interceptors.response.use(
 
 const handleError = <T>(error: any): TResult<T> => {
   if (error.response?.data) {
-    throw error.response.data;
+    return error.response.data as TResult<T>;
   }
-  throw {
+  return {
     success: false,
     data: null as any,
     messages: [error.message || "Error de conexión"],

@@ -1,4 +1,4 @@
-import { get, post, put, remove } from "@app/core/axios/axios";
+import { get, post, put, remove, axiosInstance } from "@app/core/axios/axios";
 import { TResult } from "@app/core/types/TResult";
 
 export interface FeeResponse {
@@ -7,7 +7,7 @@ export interface FeeResponse {
   description: string | null;
   amount: number;
   type: "ONE_TIME" | "MONTHLY";
-  dueDate: string;
+  dueDate: string | null;
   active: boolean;
   createdAt: string;
   updatedAt: string;
@@ -19,18 +19,6 @@ export interface PaymentSummaryResponse {
   paid: { total: number; count: number };
 }
 
-export interface SubscriptionPlanResponse {
-  id: string;
-  name: string;
-  description: string | null;
-  amount: number;
-  stripePriceId: string;
-  active: boolean;
-  interval: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface PaymentResponse {
   id: string;
   residentId: string;
@@ -38,12 +26,17 @@ export interface PaymentResponse {
   amount: number;
   reference: string | null;
   status: "PENDING" | "PAID" | "CANCELLED" | "FAILED";
+  period: string | null;
   paidAt: string | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
+  stripePaymentIntentId: string | null;
+  stripeInvoiceId: string | null;
+  s3ReceiptUrl: string | null;
   resident?: {
     id: string;
+    email: string | null;
     phone: string | null;
     user?: {
       id: string;
@@ -55,7 +48,16 @@ export interface PaymentResponse {
     id: string;
     name: string;
     amount: number;
+    type: string;
+    dueDate: string | null;
   } | null;
+  paymentLogs?: Array<{
+    action: string;
+    statusFrom: string | null;
+    statusTo: string | null;
+    notes: string | null;
+    createdAt: string;
+  }>;
 }
 
 export interface CreateFeeDTO {
@@ -63,7 +65,7 @@ export interface CreateFeeDTO {
   description?: string;
   amount: number;
   type: "ONE_TIME" | "MONTHLY";
-  dueDate: string;
+  dueDate?: string;
   active?: boolean;
 }
 
@@ -83,6 +85,7 @@ export interface CreatePaymentDTO {
   reference?: string;
   status?: "PENDING" | "PAID" | "CANCELLED" | "FAILED";
   paidAt?: string;
+  period?: string;
 }
 
 export interface UpdatePaymentDTO {
@@ -90,6 +93,7 @@ export interface UpdatePaymentDTO {
   reference?: string;
   paidAt?: string;
   softDelete?: boolean;
+  period?: string;
 }
 
 // ---- Fees API ----
@@ -156,17 +160,22 @@ export const deletePayment = async (id: string): Promise<TResult<PaymentResponse
   return await remove<PaymentResponse>(`/payments/${id}`);
 };
 
-// ---- Stripe Subscriptions ----
-export const getSubscriptionPlans = async (): Promise<TResult<SubscriptionPlanResponse[]>> => {
-  return await get<SubscriptionPlanResponse[]>("/payments/subscriptions/plans");
-};
-
-export const createCheckoutSession = async (residentId: string, planId: string): Promise<TResult<{ url: string }>> => {
-  return await post<{ url: string }>("/payments/subscriptions/checkout", { residentId, planId });
-};
-
 export const createPaymentCheckout = async (paymentId: string): Promise<TResult<{ url: string }>> => {
   return await post<{ url: string }>(`/payments/${paymentId}/checkout`, {});
+};
+
+export const downloadReceipt = async (paymentId: string): Promise<void> => {
+  const response = await axiosInstance.get(`/payments/receipt/${paymentId}/download`, {
+    responseType: "blob",
+  });
+  const url = window.URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", `comprobante_${paymentId.slice(0, 8)}.pdf`);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
 };
 
 // ---- Resident Fee Assignments ----
@@ -211,4 +220,12 @@ export const bulkAssignResidentFees = async (data: { residentIds: string[]; feeI
 
 export const deleteResidentFee = async (id: string): Promise<TResult<ResidentFeeResponse>> => {
   return await remove<ResidentFeeResponse>(`/payments/resident-fees/${id}`);
+};
+
+export const getResidentFeesByFeeId = async (feeId: string): Promise<TResult<ResidentFeeResponse[]>> => {
+  return await get<ResidentFeeResponse[]>(`/payments/resident-fees?feeId=${feeId}`);
+};
+
+export const bulkUnassignResidentFees = async (data: { residentIds: string[]; feeId: string }): Promise<TResult<ResidentFeeResponse[]>> => {
+  return await post<ResidentFeeResponse[]>("/payments/resident-fees/bulk-unassign", data);
 };

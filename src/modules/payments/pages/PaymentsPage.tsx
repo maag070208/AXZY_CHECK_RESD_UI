@@ -17,12 +17,14 @@ import {
   FaTrash,
   FaPlus,
   FaStripe,
-  FaArrowUp,
-  FaArrowDown,
+
+  FaDownload,
+  FaCalendarAlt,
 } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import {
   deletePayment,
+  downloadReceipt,
   getPaginatedPayments,
   PaymentResponse,
   createPaymentCheckout,
@@ -30,6 +32,7 @@ import {
   PaymentSummaryResponse,
 } from "../services/PaymentsService";
 import { PaymentFormDialog } from "../components/PaymentFormDialog";
+import PaymentSummaryCards from "../components/PaymentSummaryCards";
 
 const PaymentsPage = () => {
   const dispatch = useDispatch();
@@ -44,10 +47,41 @@ const PaymentsPage = () => {
   const [loadingCheckout, setLoadingCheckout] = useState(false);
   const [isPaymentFormOpen, setIsPaymentFormOpen] = useState(false);
   const [summary, setSummary] = useState<PaymentSummaryResponse | null>(null);
+  const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([
+    dayjs().startOf("month").toDate(),
+    dayjs().endOf("month").toDate(),
+  ]);
+  const [allPayments, setAllPayments] = useState<PaymentResponse[]>([]);
+  const [allPaymentsLoading, setAllPaymentsLoading] = useState(false);
+
+  const fetchAllPayments = useCallback(async () => {
+    if (!isResident) return;
+    setAllPaymentsLoading(true);
+    try {
+      const res = await getPaginatedPayments({ page: 1, limit: 200, filters: {} });
+      setAllPayments(res.data || []);
+    } finally {
+      setAllPaymentsLoading(false);
+    }
+  }, [isResident]);
 
   useEffect(() => {
     loadSummary();
-  }, [refreshKey]);
+    fetchAllPayments();
+    const qs = window.location.hash.includes("?")
+      ? window.location.hash.split("?")[1]
+      : window.location.search.replace("?", "");
+    const params = new URLSearchParams(qs);
+    const paymentResult = params.get("payment");
+    const checkoutResult = params.get("checkout");
+    if (paymentResult === "success" || checkoutResult === "success") {
+      dispatch(showToast({ message: "Pago realizado con éxito", type: "success" }));
+      window.history.replaceState({}, "", window.location.pathname + window.location.hash.split("?")[0]);
+    } else if (paymentResult === "cancel" || checkoutResult === "cancelled") {
+      dispatch(showToast({ message: "Pago cancelado", type: "info" }));
+      window.history.replaceState({}, "", window.location.pathname + window.location.hash.split("?")[0]);
+    }
+  }, [refreshKey, dispatch, fetchAllPayments]);
 
   const loadSummary = async () => {
     const res = await getPaymentSummary();
@@ -60,8 +94,11 @@ const PaymentsPage = () => {
     const f: Record<string, string | number | boolean> = {};
     if (activeFilter === "PENDING") f.status = "PENDING";
     if (activeFilter === "PAID") f.status = "PAID";
+    if (dateRange[0]) f.dateFrom = dateRange[0].toISOString();
+    if (dateRange[1]) f.dateTo = dateRange[1].toISOString();
+    if (searchTerm) f.search = searchTerm;
     return f;
-  }, [activeFilter]);
+  }, [activeFilter, dateRange, searchTerm]);
 
   const memoizedFetch = useCallback(
     (params: any) => {
@@ -73,7 +110,10 @@ const PaymentsPage = () => {
     [externalFilters],
   );
 
-  const refreshTable = () => setRefreshKey((prev) => prev + 1);
+  const refreshTable = () => {
+    setRefreshKey((prev) => prev + 1);
+    if (isResident) fetchAllPayments();
+  };
 
   const confirmDelete = async () => {
     if (!paymentToDeleteId) return;
@@ -109,15 +149,38 @@ const PaymentsPage = () => {
         label: "CUOTA",
         render: (row: PaymentResponse) => (
           <div className="flex flex-col">
-            <ITText className="font-black text-slate-700 text-[11px] uppercase tracking-tight mb-1">
+            <ITText className="font-black text-slate-700 text-[11px] uppercase tracking-tight mb-0.5">
               {row.fee?.name}
+              {row.period && (
+                <span className="font-normal text-slate-400 ml-1.5 lowercase">
+                  {dayjs(row.period, "YYYY-MM").format("MMMM YYYY")}
+                </span>
+              )}
             </ITText>
-            <ITText className="text-slate-400 text-[10px] font-bold">
-              {new Intl.NumberFormat("es-MX", {
-                style: "currency",
-                currency: "MXN",
-              }).format(row.amount)}
-            </ITText>
+            <div className="flex items-center gap-1.5">
+              <ITText className="text-slate-500 text-[10px] font-bold">
+                {new Intl.NumberFormat("es-MX", {
+                  style: "currency",
+                  currency: "MXN",
+                }).format(row.amount)}
+              </ITText>
+              {row.fee?.type === "MONTHLY" && row.fee?.dueDate && (
+                <>
+                  <span className="text-slate-300 text-[10px]">•</span>
+                  <ITText className="text-slate-400 text-[10px] font-medium">
+                    Vence {dayjs(row.fee.dueDate).format("DD/MM/YYYY")}
+                  </ITText>
+                </>
+              )}
+            </div>
+            {row.status === "PAID" && (
+              <div className="flex items-center gap-1 mt-1.5">
+                <span className="w-1 h-1 rounded-full bg-emerald-400" />
+                <ITText className="text-emerald-600 text-[9px] font-bold font-mono tracking-widest uppercase">
+                  Folio {row.id.slice(0, 8).toUpperCase()}
+                </ITText>
+              </div>
+            )}
           </div>
         ),
       },
@@ -198,6 +261,23 @@ const PaymentsPage = () => {
                 <FaTrash size={12} />
               </ITButton>
             )}
+            {row.status === "PAID" && (
+              <ITButton
+                size="small"
+                variant="outlined"
+                onClick={async () => {
+                  try {
+                    await downloadReceipt(row.id);
+                  } catch {
+                    dispatch(showToast({ message: "Comprobante no disponible", type: "info" }));
+                  }
+                }}
+                className="border-slate-200 text-slate-500"
+                title="Descargar comprobante"
+              >
+                <FaDownload size={11} />
+              </ITButton>
+            )}
           </div>
         ),
       },
@@ -216,21 +296,24 @@ const PaymentsPage = () => {
           onChange: setSearchTerm,
           placeholder: "BUSCAR PAGO...",
         }}
+        dateRange={{
+          value: dateRange,
+          onChange: (val) => setDateRange(val),
+          placeholder: "Filtrar por mes",
+        }}
         onRefresh={refreshTable}
         refreshKey={refreshKey}
         extraFilter={
-          <div className="flex gap-2">
-            <div className="w-full md:w-80">
-              <ITTripleFilter
-                value={activeFilter}
-                onChange={setActiveFilter}
-                options={[
-                  { label: "TODOS", value: "all" },
-                  { label: "PENDIENTES", value: "PENDING" },
-                  { label: "PAGADOS", value: "PAID" },
-                ]}
-              />
-            </div>
+          <div className="flex items-center gap-2">
+            <ITTripleFilter
+              value={activeFilter}
+              onChange={setActiveFilter}
+              options={[
+                { label: "TODOS", value: "all" },
+                { label: "PENDIENTES", value: "PENDING" },
+                { label: "PAGADOS", value: "PAID" },
+              ]}
+            />
             {!isResident && (
               <ITButton
                 variant="filled"
@@ -246,59 +329,286 @@ const PaymentsPage = () => {
       />
 
       {summary && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 mt-4">
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center justify-between group">
-            <div className="flex flex-col">
-              <ITText className="font-black text-[11px] uppercase tracking-[0.2em] text-slate-400 mb-1">
-                {isResident ? "Total Pagado" : "Total Recaudado"}
-              </ITText>
-              <ITText className="font-black text-3xl tracking-tighter text-slate-800">
-                {new Intl.NumberFormat("es-MX", {
-                  style: "currency",
-                  currency: "MXN",
-                }).format(summary.paid.total)}
-              </ITText>
-              <ITText className="font-bold text-[10px] uppercase tracking-widest text-emerald-500 mt-2">
-                {summary.paid.count} Pagos al corriente
-              </ITText>
-            </div>
-            <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform duration-300">
-              <FaArrowUp size={24} />
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center justify-between group">
-            <div className="flex flex-col">
-              <ITText className="font-black text-[11px] uppercase tracking-[0.2em] text-slate-400 mb-1">
-                Total Pendiente
-              </ITText>
-              <ITText className="font-black text-3xl tracking-tighter text-slate-800">
-                {new Intl.NumberFormat("es-MX", {
-                  style: "currency",
-                  currency: "MXN",
-                }).format(summary.pending.total)}
-              </ITText>
-              <ITText className="font-bold text-[10px] uppercase tracking-widest text-rose-500 mt-2">
-                {summary.pending.count} Pagos atrasados
-              </ITText>
-            </div>
-            <div className="w-14 h-14 rounded-2xl bg-rose-50 flex items-center justify-center text-rose-500 group-hover:scale-110 transition-transform duration-300">
-              <FaArrowDown size={24} />
-            </div>
-          </div>
-        </div>
+        <PaymentSummaryCards
+          paid={summary.paid}
+          pending={summary.pending}
+          isResident={isResident}
+        />
       )}
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <ITDataTable<PaymentResponse & Record<string, unknown>>
-          key={refreshKey}
-          fetchData={memoizedFetch as any}
-          columns={columns as any}
-          externalFilters={externalFilters}
-          defaultItemsPerPage={10}
-          title=""
-        />
-      </div>
+      {isResident ? (
+        <div className="space-y-10 mt-6">
+          {/* ══════════════════════════════════════════
+             CARGOS ÚNICOS
+          ══════════════════════════════════════════ */}
+          <div>
+            <div className="mb-4">
+              <ITText className="text-sm font-semibold text-slate-900">
+                Cargos Únicos
+              </ITText>
+              <ITText className="text-xs text-slate-400 mt-0.5">
+                Cobros de una sola vez
+              </ITText>
+            </div>
+            {allPaymentsLoading ? (
+              <div className="flex justify-center py-16">
+                <div className="w-8 h-8 border-2 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            ) : allPayments.filter((p) => p.fee?.type === "ONE_TIME").length === 0 ? (
+              <div className="py-12 text-center flex flex-col items-center justify-center border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+                <ITText className="text-slate-500 font-medium text-sm">
+                  Sin cargos únicos
+                </ITText>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {allPayments
+                  .filter((p) => p.fee?.type === "ONE_TIME")
+                  .map((p) => (
+                    <div
+                      key={p.id}
+                      className="bg-white p-4 rounded-xl border border-slate-100 flex items-center justify-between hover:border-slate-200 transition-colors"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div
+                          className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                            p.status === "PAID"
+                              ? "bg-emerald-50 text-emerald-600"
+                              : p.status === "PENDING"
+                                ? "bg-amber-50 text-amber-600"
+                                : "bg-red-50 text-red-600"
+                          }`}
+                        >
+                          <FaMoneyBill size={15} />
+                        </div>
+                        <div>
+                          <ITText className="font-semibold text-slate-900 text-sm">
+                            {p.fee?.name}
+                          </ITText>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <ITText className="text-sm font-bold text-slate-700">
+                              {new Intl.NumberFormat("es-MX", {
+                                style: "currency",
+                                currency: "MXN",
+                              }).format(p.amount)}
+                            </ITText>
+                            {p.status === "PAID" && (
+                              <>
+                                <span className="w-1 h-1 rounded-full bg-emerald-400" />
+                                <ITText className="text-emerald-600 text-[10px] font-bold font-mono tracking-widest uppercase">
+                                  Folio {p.id.slice(0, 8).toUpperCase()}
+                                </ITText>
+                              </>
+                            )}
+                          </div>
+                          <ITText className="text-[10px] text-slate-400 mt-0.5">
+                            {p.paidAt
+                              ? `Pagado ${dayjs(p.paidAt).format("DD MMM YYYY")}`
+                              : "Pendiente"}
+                          </ITText>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <ITBadget
+                          color={
+                            p.status === "PAID"
+                              ? "success"
+                              : p.status === "PENDING"
+                                ? "warning"
+                                : "error"
+                          }
+                          size="small"
+                          className="!rounded-full !px-2.5 font-medium text-[10px]"
+                        >
+                          {p.status === "PAID"
+                            ? "Pagado"
+                            : p.status === "PENDING"
+                              ? "Pendiente"
+                              : "Cancelado"}
+                        </ITBadget>
+                        {p.status === "PAID" && (
+                          <ITButton
+                            size="small"
+                            variant="outlined"
+                            onClick={async () => {
+                              try {
+                                await downloadReceipt(p.id);
+                              } catch {
+                                dispatch(showToast({ message: "Comprobante no disponible", type: "info" }));
+                              }
+                            }}
+                            className="border-slate-200 text-slate-500 !px-2.5"
+                            title="Descargar comprobante"
+                          >
+                            <FaDownload size={11} />
+                          </ITButton>
+                        )}
+                        {p.status === "PENDING" && (
+                          <ITButton
+                            size="small"
+                            onClick={async () => {
+                              setLoadingCheckout(true);
+                              const res = await createPaymentCheckout(p.id);
+                              setLoadingCheckout(false);
+                              if (res.success && res.data?.url) {
+                                window.location.href = res.data.url;
+                              } else {
+                                dispatch(showToast({ message: "Error al iniciar Stripe", type: "error" }));
+                              }
+                            }}
+                            disabled={loadingCheckout}
+                            className="!rounded-lg bg-slate-900 text-white hover:bg-slate-800 font-medium px-4 text-xs transition-colors"
+                          >
+                            Pagar ahora
+                          </ITButton>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+
+          {/* ══════════════════════════════════════════
+             CUOTAS POR MES
+          ══════════════════════════════════════════ */}
+          <div>
+            <div className="mb-4">
+              <ITText className="text-sm font-semibold text-slate-900">
+                Cuotas por Mes
+              </ITText>
+              <ITText className="text-xs text-slate-400 mt-0.5">
+                Mensualidades por período
+              </ITText>
+            </div>
+            {(() => {
+              const monthly = allPayments.filter((p) => p.fee?.type === "MONTHLY" || !p.fee?.type);
+              const grouped: Record<string, { feeName: string; feeAmount: number; payments: PaymentResponse[] }> = {};
+              monthly.forEach((p) => {
+                const key = p.feeId || "other";
+                if (!grouped[key]) {
+                  grouped[key] = { feeName: p.fee?.name || "Cuota", feeAmount: p.amount, payments: [] };
+                }
+                grouped[key].payments.push(p);
+              });
+              const groups = Object.values(grouped);
+
+              if (allPaymentsLoading) {
+                return (
+                  <div className="flex justify-center py-16">
+                    <div className="w-8 h-8 border-2 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                );
+              }
+              if (groups.length === 0) {
+                return (
+                  <div className="py-12 text-center flex flex-col items-center justify-center border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+                    <ITText className="text-slate-500 font-medium text-sm">Sin cuotas mensuales</ITText>
+                  </div>
+                );
+              }
+              return (
+                <div className="space-y-4">
+                  {groups.map((g) => (
+                    <div key={g.feeName} className="bg-white p-4 rounded-xl border border-slate-100 hover:border-slate-200 transition-colors">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                          <FaMoneyBill size={15} />
+                        </div>
+                        <div>
+                          <ITText className="font-semibold text-slate-900 text-sm">{g.feeName}</ITText>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <ITText className="font-bold text-slate-700 text-sm">
+                              {new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(g.feeAmount)}
+                            </ITText>
+                            <span className="text-slate-300 text-[10px]">•</span>
+                            <ITText className="text-[10px] text-slate-400 font-medium">Mensual</ITText>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        {g.payments
+                          .sort((a, b) => ((b.period || "") > (a.period || "") ? 1 : -1))
+                          .map((p) => (
+                            <div key={p.id} className="flex items-center justify-between py-2 px-3 rounded-lg bg-slate-50/70">
+                              <div className="flex items-center gap-3">
+                                <ITText className="text-xs font-medium text-slate-600 min-w-[90px]">
+                                  {p.period ? dayjs(p.period, "YYYY-MM").format("MMMM YYYY") : "—"}
+                                </ITText>
+                                <ITText className="text-xs font-bold text-slate-700">
+                                  {new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(p.amount)}
+                                </ITText>
+                                {p.status === "PAID" && (
+                                  <ITText className="text-emerald-600 text-[9px] font-bold font-mono tracking-widest uppercase">
+                                    Folio {p.id.slice(0, 8).toUpperCase()}
+                                  </ITText>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <ITBadget
+                                  color={p.status === "PAID" ? "success" : p.status === "PENDING" ? "warning" : "error"}
+                                  size="small"
+                                  className="!rounded-full !px-2 font-medium text-[9px]"
+                                >
+                                  {p.status === "PAID" ? "Pagado" : p.status === "PENDING" ? "Pendiente" : "Cancelado"}
+                                </ITBadget>
+                                {p.status === "PAID" && (
+                                  <ITButton
+                                    size="small"
+                                    variant="outlined"
+                                    onClick={async () => {
+                                      try { await downloadReceipt(p.id); }
+                                      catch { dispatch(showToast({ message: "Comprobante no disponible", type: "info" })); }
+                                    }}
+                                    className="border-slate-200 text-slate-500 !px-2"
+                                    title="Descargar comprobante"
+                                  >
+                                    <FaDownload size={10} />
+                                  </ITButton>
+                                )}
+                                {p.status === "PENDING" && (
+                                  <ITButton
+                                    size="small"
+                                    onClick={async () => {
+                                      setLoadingCheckout(true);
+                                      const res = await createPaymentCheckout(p.id);
+                                      setLoadingCheckout(false);
+                                      if (res.success && res.data?.url) {
+                                        window.location.href = res.data.url;
+                                      } else {
+                                        dispatch(showToast({ message: "Error al iniciar Stripe", type: "error" }));
+                                      }
+                                    }}
+                                    disabled={loadingCheckout}
+                                    className="!rounded-lg bg-slate-900 text-white hover:bg-slate-800 font-medium px-3 text-[10px] transition-colors whitespace-nowrap"
+                                  >
+                                    Pagar ahora
+                                  </ITButton>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+          <ITDataTable<PaymentResponse & Record<string, unknown>>
+            key={refreshKey}
+            fetchData={memoizedFetch as any}
+            columns={columns as any}
+            externalFilters={externalFilters}
+            defaultItemsPerPage={10}
+            title=""
+          />
+        </div>
+      )}
 
       <ITDialog
         isOpen={!!paymentToDeleteId}
