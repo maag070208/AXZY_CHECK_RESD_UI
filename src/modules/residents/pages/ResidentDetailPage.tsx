@@ -8,6 +8,7 @@ import {
 import {
   ITBadget,
   ITButton,
+  ITDatePicker,
   ITInput,
   ITTabs,
   ITText,
@@ -35,18 +36,17 @@ import { useNavigate, useParams } from "react-router-dom";
 import * as Yup from "yup";
 import { updateUser, resetPassword } from "../../users/services/UserService";
 import {
-  createFee,
   createPayment,
   createPaymentCheckout,
-  getPaginatedPayments,
-  PaymentResponse,
-  ResidentFeeResponse,
-  getResidentFees,
-  createResidentFee,
-  deleteResidentFee,
+  downloadReceipt,
   getFees,
   FeeResponse,
-  downloadReceipt,
+  getPaginatedPayments,
+  PaymentResponse,
+  getResidentFees,
+  ResidentFeeResponse,
+  createResidentFee,
+  deleteResidentFee,
 } from "../../payments/services/PaymentsService";
 import {
   createContact,
@@ -103,57 +103,32 @@ export const ResidentDetailPage: React.FC = () => {
   const [feeToUnassignId, setFeeToUnassignId] = useState<string | null>(null);
 
   const paymentFormik = useFormik({
-    initialValues: { name: "", amount: "" },
+    initialValues: { name: "", amount: "", dueDate: dayjs().add(7, "day").toDate() },
     validationSchema: Yup.object({
       name: Yup.string().required("Concepto requerido"),
       amount: Yup.number().required("Monto requerido").min(1, "Mínimo $1"),
+      dueDate: Yup.date().required("Fecha límite requerida").nullable(),
     }),
     onSubmit: async (values, { resetForm }) => {
       if (!resident) return;
       try {
-        const feeRes = await createFee({
-          name: values.name,
+        const payRes = await createPayment({
+          residentId: resident.id,
           amount: Number(values.amount),
-          type: "ONE_TIME",
-          dueDate: new Date().toISOString(),
-          active: true,
+          concept: values.name,
+          status: "PENDING",
+          period: values.dueDate ? dayjs(values.dueDate).format("YYYY-MM") : undefined,
         });
-        if (feeRes.success && feeRes.data) {
-          const payRes = await createPayment({
-            residentId: resident.id,
-            feeId: feeRes.data.id,
-            amount: Number(values.amount),
-            status: "PENDING",
-          });
-          if (payRes.success) {
-            dispatch(
-              showToast({
-                message: "Cargo generado correctamente",
-                type: "success",
-              }),
-            );
-            resetForm();
-            setIsAddingPayment(false);
-            fetchPayments();
-          } else {
-            dispatch(
-              showToast({
-                message: payRes.messages?.[0] || "Error al crear el pago",
-                type: "error",
-              }),
-            );
-          }
+        if (payRes.success) {
+          dispatch(showToast({ message: "Cargo generado correctamente", type: "success" }));
+          resetForm();
+          setIsAddingPayment(false);
+          fetchPayments();
         } else {
-          dispatch(
-            showToast({
-              message: feeRes.messages?.[0] || "Error al crear la cuota",
-              type: "error",
-            }),
-          );
+          dispatch(showToast({ message: payRes.messages?.[0] || "Error al crear el pago", type: "error" }));
         }
       } catch (error: any) {
-        const apiMsg =
-          error?.messages?.[0] || error?.message || "Error al generar cargo";
+        const apiMsg = error?.messages?.[0] || error?.message || "Error al generar cargo";
         dispatch(showToast({ message: apiMsg, type: "error" }));
       }
     },
@@ -1136,6 +1111,18 @@ export const ResidentDetailPage: React.FC = () => {
                                 error={paymentFormik.errors.amount as string}
                               />
                             </div>
+                            <div className="flex flex-col gap-2">
+                              <ITDatePicker
+                                label="Fecha Límite de Pago"
+                                name="dueDate"
+                                value={paymentFormik.values.dueDate}
+                                onChange={(e) =>
+                                  paymentFormik.setFieldValue("dueDate", e.target.value)
+                                }
+                                error={paymentFormik.errors.dueDate as string}
+                                touched={!!paymentFormik.touched.dueDate}
+                              />
+                            </div>
                             <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
                               <ITButton
                                 type="button"
@@ -1160,7 +1147,7 @@ export const ResidentDetailPage: React.FC = () => {
                         <div className="flex justify-center py-20">
                           <div className="w-8 h-8 border-2 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
                         </div>
-                      ) : payments.filter((p) => p.fee?.type === "ONE_TIME").length === 0 ? (
+                      ) : payments.filter((p) => p.fee?.type === "ONE_TIME" || !p.feeId).length === 0 ? (
                         <div className="py-16 text-center flex flex-col items-center justify-center border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
                           <ITText className="text-slate-500 font-medium text-sm">
                             Sin cargos únicos
@@ -1169,7 +1156,7 @@ export const ResidentDetailPage: React.FC = () => {
                       ) : (
                         <div className="space-y-3">
                           {payments
-                            .filter((p) => p.fee?.type === "ONE_TIME")
+                            .filter((p) => p.fee?.type === "ONE_TIME" || !p.feeId)
                             .map((p) => (
                               <div
                                 key={p.id}
@@ -1189,7 +1176,7 @@ export const ResidentDetailPage: React.FC = () => {
                                   </div>
                                   <div>
                                     <ITText className="font-semibold text-slate-900 text-sm">
-                                      {p.fee?.name}
+                                      {p.fee?.name || p.reference || "Cargo único"}
                                     </ITText>
                                     <div className="flex items-center gap-2 mt-0.5">
                                       <ITText className="text-sm font-bold text-slate-700">

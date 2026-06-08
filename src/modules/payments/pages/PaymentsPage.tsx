@@ -26,8 +26,6 @@ import {
   getPaginatedPayments,
   PaymentResponse,
   createPaymentCheckout,
-  getPaymentSummary,
-  PaymentSummaryResponse,
 } from "../services/PaymentsService";
 import { PaymentFormDialog } from "../components/PaymentFormDialog";
 import PaymentSummaryCards from "../components/PaymentSummaryCards";
@@ -39,12 +37,12 @@ const PaymentsPage = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
+  const [activeTypeFilter, setActiveTypeFilter] = useState("all");
   const [paymentToDeleteId, setPaymentToDeleteId] = useState<string | null>(
     null,
   );
   const [loadingCheckout, setLoadingCheckout] = useState(false);
   const [isPaymentFormOpen, setIsPaymentFormOpen] = useState(false);
-  const [summary, setSummary] = useState<PaymentSummaryResponse | null>(null);
   const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([
     dayjs().startOf("month").toDate(),
     dayjs().endOf("month").toDate(),
@@ -52,20 +50,30 @@ const PaymentsPage = () => {
   const [allPayments, setAllPayments] = useState<PaymentResponse[]>([]);
   const [allPaymentsLoading, setAllPaymentsLoading] = useState(false);
 
-  const fetchAllPayments = useCallback(async () => {
-    if (!isResident) return;
+  const fetchAllPayments = useCallback(async (filters: Record<string, unknown> = {}) => {
     setAllPaymentsLoading(true);
     try {
-      const res = await getPaginatedPayments({ page: 1, limit: 200, filters: {} });
+      const res = await getPaginatedPayments({ page: 1, limit: 500, filters });
       setAllPayments(res.data || []);
     } finally {
       setAllPaymentsLoading(false);
     }
-  }, [isResident]);
+  }, []);
+
+  const externalFilters = useMemo(() => {
+    const f: Record<string, string | number | boolean> = {};
+    if (activeFilter === "PENDING") f.status = "PENDING";
+    if (activeFilter === "PAID") f.status = "PAID";
+    if (activeTypeFilter === "MANUAL") f.feeId = "null";
+    if (activeTypeFilter === "MONTHLY") f.feeId = "notnull";
+    if (dateRange[0]) f.dateFrom = dateRange[0].toISOString();
+    if (dateRange[1]) f.dateTo = dateRange[1].toISOString();
+    if (searchTerm) f.search = searchTerm;
+    return f;
+  }, [activeFilter, activeTypeFilter, dateRange, searchTerm]);
 
   useEffect(() => {
-    loadSummary();
-    fetchAllPayments();
+    fetchAllPayments(externalFilters);
     const qs = window.location.hash.includes("?")
       ? window.location.hash.split("?")[1]
       : window.location.search.replace("?", "");
@@ -79,24 +87,22 @@ const PaymentsPage = () => {
       dispatch(showToast({ message: "Pago cancelado", type: "info" }));
       window.history.replaceState({}, "", window.location.pathname + window.location.hash.split("?")[0]);
     }
-  }, [refreshKey, dispatch, fetchAllPayments]);
+  }, [refreshKey, dispatch, fetchAllPayments, externalFilters]);
 
-  const loadSummary = async () => {
-    const res = await getPaymentSummary();
-    if (res.success && res.data) {
-      setSummary(res.data);
-    }
-  };
-
-  const externalFilters = useMemo(() => {
-    const f: Record<string, string | number | boolean> = {};
-    if (activeFilter === "PENDING") f.status = "PENDING";
-    if (activeFilter === "PAID") f.status = "PAID";
-    if (dateRange[0]) f.dateFrom = dateRange[0].toISOString();
-    if (dateRange[1]) f.dateTo = dateRange[1].toISOString();
-    if (searchTerm) f.search = searchTerm;
-    return f;
-  }, [activeFilter, dateRange, searchTerm]);
+  const computedSummary = useMemo(() => {
+    const paid = allPayments.filter((p) => p.status === "PAID");
+    const pending = allPayments.filter((p) => p.status === "PENDING");
+    return {
+      paid: {
+        total: paid.reduce((s, p) => s + Number(p.amount), 0),
+        count: paid.length,
+      },
+      pending: {
+        total: pending.reduce((s, p) => s + Number(p.amount), 0),
+        count: pending.length,
+      },
+    };
+  }, [allPayments]);
 
   const memoizedFetch = useCallback(
     (params: any) => {
@@ -110,7 +116,7 @@ const PaymentsPage = () => {
 
   const refreshTable = () => {
     setRefreshKey((prev) => prev + 1);
-    if (isResident) fetchAllPayments();
+    if (isResident) fetchAllPayments(externalFilters);
   };
 
   const confirmDelete = async () => {
@@ -183,6 +189,19 @@ const PaymentsPage = () => {
         ),
       },
       {
+        key: "dueDate",
+        label: "FECHA LÍMITE",
+        render: (row: PaymentResponse) => (
+          <ITText className="text-slate-700 text-[11px] font-black uppercase">
+            {row.fee?.dueDate
+              ?  dayjs(row.fee.dueDate).format("DD/MM/YYYY")
+              : row.period
+                ? dayjs(row.period, "YYYY-MM").endOf("month").format("DD/MM/YYYY")
+                : "-"}
+          </ITText>
+        ),
+      },
+      {
         key: "status",
         label: "ESTADO",
         render: (row: PaymentResponse) => {
@@ -212,7 +231,7 @@ const PaymentsPage = () => {
         label: "FECHA PAGO",
         render: (row: PaymentResponse) => (
           <ITText className="text-slate-700 text-[11px] font-black uppercase">
-            {row.paidAt ? dayjs(row.paidAt).format("DD MMM YYYY") : "-"}
+            {row.paidAt ? dayjs(row.paidAt).format("DD/MM/YYYY") : "-"}
           </ITText>
         ),
       },
@@ -301,38 +320,45 @@ const PaymentsPage = () => {
         }}
         onRefresh={refreshTable}
         refreshKey={refreshKey}
-        extraFilter={
-          <div className="flex items-center gap-2">
-            <ITTripleFilter
-              value={activeFilter}
-              onChange={setActiveFilter}
-              options={[
-                { label: "TODOS", value: "all" },
-                { label: "PENDIENTES", value: "PENDING" },
-                { label: "PAGADOS", value: "PAID" },
-              ]}
-            />
-            {!isResident && (
-              <ITButton
-                variant="filled"
-                color="primary"
-                onClick={() => setIsPaymentFormOpen(true)}
-                className="!flex !flex-row !items-center !gap-2"
-              >
-                <FaPlus size={12} /> Nuevo Pago
-              </ITButton>
+         extraFilter={
+           <div className="flex items-center gap-3">
+             <ITTripleFilter
+               value={activeFilter}
+               onChange={setActiveFilter}
+               options={[
+                 { label: "TODOS", value: "all" },
+                 { label: "PENDIENTES", value: "PENDING" },
+                 { label: "PAGADOS", value: "PAID" },
+               ]}
+             />
+             <ITTripleFilter
+               value={activeTypeFilter}
+               onChange={setActiveTypeFilter}
+               options={[
+                 { label: "TODOS", value: "all" },
+                 { label: "MENSUALIDADES", value: "MONTHLY" },
+                 { label: "CARGOS ÚNICOS", value: "MANUAL" },
+               ]}
+             />
+             {!isResident && (
+               <ITButton
+                 variant="filled"
+                 color="primary"
+                 onClick={() => setIsPaymentFormOpen(true)}
+                 className="!flex !flex-row !items-center !gap-2"
+               >
+                 <FaPlus size={12} /> Nuevo Pago
+               </ITButton>
             )}
           </div>
         }
       />
 
-      {summary && (
-        <PaymentSummaryCards
-          paid={summary.paid}
-          pending={summary.pending}
-          isResident={isResident}
-        />
-      )}
+      <PaymentSummaryCards
+        paid={computedSummary.paid}
+        pending={computedSummary.pending}
+        isResident={isResident}
+      />
 
       {isResident ? (
         <div className="space-y-10 mt-6">
@@ -352,7 +378,7 @@ const PaymentsPage = () => {
               <div className="flex justify-center py-16">
                 <div className="w-8 h-8 border-2 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
               </div>
-            ) : allPayments.filter((p) => p.fee?.type === "ONE_TIME").length === 0 ? (
+            ) : allPayments.filter((p) => p.fee?.type === "ONE_TIME" || !p.feeId).length === 0 ? (
               <div className="py-12 text-center flex flex-col items-center justify-center border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
                 <ITText className="text-slate-500 font-medium text-sm">
                   Sin cargos únicos
@@ -361,7 +387,7 @@ const PaymentsPage = () => {
             ) : (
               <div className="space-y-3">
                 {allPayments
-                  .filter((p) => p.fee?.type === "ONE_TIME")
+                  .filter((p) => p.fee?.type === "ONE_TIME" || !p.feeId)
                   .map((p) => (
                     <div
                       key={p.id}
@@ -381,7 +407,7 @@ const PaymentsPage = () => {
                         </div>
                         <div>
                           <ITText className="font-semibold text-slate-900 text-sm">
-                            {p.fee?.name}
+                            {p.fee?.name || p.reference || "Cargo único"}
                           </ITText>
                           <div className="flex items-center gap-2 mt-0.5">
                             <ITText className="text-sm font-bold text-slate-700">
@@ -480,7 +506,7 @@ const PaymentsPage = () => {
               </ITText>
             </div>
             {(() => {
-              const monthly = allPayments.filter((p) => p.fee?.type === "MONTHLY" || !p.fee?.type);
+              const monthly = allPayments.filter((p) => p.fee?.type === "MONTHLY");
               const grouped: Record<string, { feeName: string; feeAmount: number; payments: PaymentResponse[] }> = {};
               monthly.forEach((p) => {
                 const key = p.feeId || "other";

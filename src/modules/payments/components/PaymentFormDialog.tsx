@@ -5,8 +5,10 @@ import {
 } from "@app/modules/residents/services/ResidentsService";
 import {
   ITButton,
+  ITDatePicker,
   ITDialog,
   ITInput,
+  ITLoader,
   ITText,
   ITSearchSelect,
 } from "@axzydev/axzy_ui_system";
@@ -17,6 +19,7 @@ import { useDispatch } from "react-redux";
 import * as Yup from "yup";
 import {
   createPayment,
+  CreatePaymentDTO,
   FeeResponse,
   getFees,
 } from "../services/PaymentsService";
@@ -36,6 +39,7 @@ export const PaymentFormDialog: React.FC<Props> = ({
   const [fees, setFees] = useState<FeeResponse[]>([]);
   const [residents, setResidents] = useState<ResidentResponse[]>([]);
   const [loadingData, setLoadingData] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -62,34 +66,43 @@ export const PaymentFormDialog: React.FC<Props> = ({
     initialValues: {
       residentId: "",
       feeId: "",
+      concept: "",
       amount: "",
       status: "PAID" as "PENDING" | "PAID",
-      paidAt: dayjs().format("YYYY-MM-DD"),
+      paidAt: dayjs().toDate(),
     },
     validationSchema: Yup.object({
       residentId: Yup.string().required("Selecciona un residente"),
-      feeId: Yup.string().required("Selecciona un tipo de cuota"),
+      concept: Yup.string().when("feeId", {
+        is: (feeId: string) => !feeId,
+        then: (s) => s.required("Describe el concepto del cargo"),
+      }),
       amount: Yup.number()
         .min(1, "Debe ser mayor a 0")
         .required("El monto es requerido"),
       status: Yup.string().required(),
-      paidAt: Yup.string().when("status", {
-        is: "PAID",
-        then: (s) => s.required("Selecciona la fecha de pago"),
+      paidAt: Yup.date().when(["status", "feeId"], {
+        is: (status: string, feeId: string) => status === "PAID" || !feeId,
+        then: (s) => s.required("Selecciona la fecha de pago").nullable(),
       }),
     }),
     onSubmit: async (values) => {
+      setSubmitting(true);
       try {
-        const payload = {
+        const payload: CreatePaymentDTO = {
           residentId: values.residentId,
-          feeId: values.feeId,
           amount: Number(values.amount),
           status: values.status,
           paidAt:
-            values.status === "PAID"
-              ? new Date(values.paidAt).toISOString()
+            values.status === "PAID" || isManual
+              ? dayjs(values.paidAt).toISOString()
               : undefined,
         };
+        if (values.feeId) {
+          payload.feeId = values.feeId;
+        } else {
+          payload.concept = values.concept;
+        }
         const res = await createPayment(payload);
         if (res.success) {
           dispatch(
@@ -107,27 +120,33 @@ export const PaymentFormDialog: React.FC<Props> = ({
         }
       } catch (error) {
         dispatch(showToast({ message: "Error en el servidor", type: "error" }));
+      } finally {
+        setSubmitting(false);
       }
     },
   });
+
+  const isManual = !formik.values.feeId;
 
   return (
     <ITDialog
       isOpen={isOpen}
       onClose={onClose}
-      title="Registrar Pago"
+      title={isManual ? "Cargo Único" : "Registrar Pago"}
       className="!w-full !max-w-2xl"
     >
       <div className="flex flex-col bg-white overflow-hidden max-h-[75vh]">
         <form
           onSubmit={formik.handleSubmit}
-          className="flex flex-col h-full overflow-hidden"
+          className="flex flex-col h-full overflow-hidden relative"
         >
           <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
             <section>
               <div className="pb-3 border-b border-slate-100 mb-6">
                 <ITText className="text-sm font-semibold text-slate-900">
-                  Asignación Manual de Cobro
+                  {isManual
+                    ? "Cargo Único Directo"
+                    : "Asignación Manual de Cobro"}
                 </ITText>
               </div>
 
@@ -163,9 +182,7 @@ export const PaymentFormDialog: React.FC<Props> = ({
                   <div className="md:col-span-2 flex flex-col gap-2">
                     <ITSearchSelect
                       label="Tipo de Pago / Cuota"
-                      placeholder={
-                        loadingData ? "Cargando..." : "Seleccionar cuota..."
-                      }
+                      placeholder="Seleccionar cuota (opcional)"
                       options={fees.map((f) => ({
                         label: `${f.name} ($${f.amount} MXN)`,
                         value: f.id,
@@ -173,19 +190,30 @@ export const PaymentFormDialog: React.FC<Props> = ({
                       value={formik.values.feeId}
                       onChange={(val) => {
                         formik.setFieldValue("feeId", val);
-                        const selectedFee = fees.find((f) => f.id === val);
-                        if (selectedFee) {
-                          formik.setFieldValue("amount", selectedFee.amount);
+                        if (val) {
+                          const selectedFee = fees.find((f) => f.id === val);
+                          if (selectedFee) {
+                            formik.setFieldValue("amount", selectedFee.amount);
+                          }
                         }
                       }}
-                      error={
-                        formik.errors.feeId
-                          ? String(formik.errors.feeId)
-                          : undefined
-                      }
                       touched={!!formik.touched.feeId}
                     />
                   </div>
+
+                  {isManual && (
+                    <div className="md:col-span-2">
+                      <ITInput
+                        label="Concepto del Cargo"
+                        name="concept"
+                        type="text"
+                        value={formik.values.concept}
+                        onChange={formik.handleChange}
+                        error={formik.errors.concept as string}
+                        placeholder="Ej. Multa por ruido, Reparación de ventana"
+                      />
+                    </div>
+                  )}
 
                   <ITInput
                     label="Monto (MXN)"
@@ -212,23 +240,18 @@ export const PaymentFormDialog: React.FC<Props> = ({
                     </select>
                   </div>
 
-                  {formik.values.status === "PAID" && (
-                    <div className="md:col-span-2 flex flex-col gap-2">
-                      <ITText className="text-[13px] font-bold text-slate-500">
-                        Fecha de Pago
-                      </ITText>
-                      <input
+                  {(formik.values.status === "PAID" || isManual) && (
+                    <div className="md:col-span-2">
+                      <ITDatePicker
+                        label="Fecha de Pago"
                         name="paidAt"
-                        type="date"
                         value={formik.values.paidAt}
-                        onChange={formik.handleChange}
-                        className="w-full bg-white border border-slate-200 rounded-lg p-3 text-sm text-slate-700 outline-none focus:border-slate-900 transition-colors"
+                        onChange={(e) =>
+                          formik.setFieldValue("paidAt", e.target.value)
+                        }
+                        error={formik.errors.paidAt as string}
+                        touched={!!formik.touched.paidAt}
                       />
-                      {formik.errors.paidAt && formik.touched.paidAt && (
-                        <ITText className="text-rose-500 text-[10px] font-bold mt-1">
-                          {formik.errors.paidAt as string}
-                        </ITText>
-                      )}
                     </div>
                   )}
                 </div>
@@ -249,9 +272,19 @@ export const PaymentFormDialog: React.FC<Props> = ({
               type="submit"
               className="bg-slate-900 text-white hover:bg-slate-800 !rounded-lg font-medium"
             >
-              Registrar Pago
+              {isManual ? "Registrar Cargo" : "Registrar Pago"}
             </ITButton>
           </div>
+          {submitting && (
+            <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-2xl">
+              <div className="bg-white p-6 rounded-2xl shadow-xl border border-slate-100 flex flex-col items-center gap-3">
+                <ITLoader size="lg" />
+                <ITText className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">
+                  Procesando
+                </ITText>
+              </div>
+            </div>
+          )}
         </form>
       </div>
     </ITDialog>

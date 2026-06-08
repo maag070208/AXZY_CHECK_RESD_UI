@@ -3,6 +3,7 @@ import { showToast } from "@app/core/store/toast/toast.slice";
 import {
   ITBadget,
   ITButton,
+  ITDatePicker,
   ITDialog,
   ITInput,
   ITText,
@@ -69,7 +70,8 @@ const FeesPage = () => {
       description: "",
       amount: 0,
       type: "ONE_TIME" as "ONE_TIME" | "MONTHLY",
-      dueDate: dayjs().add(1, "month").format("YYYY-MM-DD"),
+      dueDate: dayjs().add(1, "month").toDate(),
+      dueDay: 1,
     },
     validationSchema: Yup.object({
       name: Yup.string().required("El nombre es requerido"),
@@ -77,18 +79,29 @@ const FeesPage = () => {
         .min(1, "Debe ser mayor a 0")
         .required("El monto es requerido"),
       type: Yup.string().required("El tipo es requerido"),
-      dueDate: Yup.string().when("type", {
+      dueDate: Yup.date().when("type", {
         is: "ONE_TIME",
-        then: (s) => s.required("Fecha de vencimiento requerida"),
+        then: (s) => s.required("Fecha de vencimiento requerida").nullable(),
+        otherwise: (s) => s.notRequired().nullable(),
+      }),
+      dueDay: Yup.number().when("type", {
+        is: "MONTHLY",
+        then: (s) => s.required("Día de vencimiento requerido").min(1).max(28),
         otherwise: (s) => s.notRequired(),
       }),
     }),
     onSubmit: async (values, { resetForm }) => {
       try {
         const res = await createFee({
-          ...values,
+          name: values.name,
+          description: values.description,
           amount: Number(values.amount),
           type: values.type,
+          dueDate: values.type === "ONE_TIME" && values.dueDate
+            ? dayjs(values.dueDate).toISOString()
+            : values.type === "MONTHLY"
+              ? dayjs().date(values.dueDay).startOf("day").toISOString()
+              : undefined,
         });
         if (res.success) {
           dispatch(
@@ -166,11 +179,13 @@ const FeesPage = () => {
     },
     {
       key: "dueDate",
-      label: "Vencimiento",
+      label: "VENCIMIENTO",
       type: "date" as const,
       render: (row: FeeResponse) =>
         row.type === "MONTHLY" ? (
-          <ITText className="text-xs text-slate-400 italic">—</ITText>
+          <ITText className="text-xs text-slate-600">
+            Día {dayjs(row.dueDate).format("DD")} c/mes
+          </ITText>
         ) : (
           <ITText className="text-xs text-slate-600">
             {dayjs(row.dueDate).format("DD/MM/YYYY")}
@@ -298,25 +313,31 @@ const FeesPage = () => {
               <option value="MONTHLY">Cargo Mensual (Recurrente)</option>
             </select>
           </div>
-          {formik.values.type === "ONE_TIME" && (
-            <div className="flex flex-col gap-1.5">
-              <ITText className="text-xs font-medium text-slate-700">
-                Fecha de Vencimiento
-              </ITText>
-              <input
-                name="dueDate"
-                type="date"
-                value={formik.values.dueDate}
-                onChange={formik.handleChange}
-                className="w-full bg-white border border-slate-200 rounded-lg p-3 text-sm text-slate-700 outline-none focus:border-slate-900 transition-colors"
-              />
-              {formik.errors.dueDate && formik.touched.dueDate && (
-                <ITText className="text-rose-500 text-[10px] font-bold mt-1">
-                  {formik.errors.dueDate as string}
-                </ITText>
-              )}
-            </div>
-          )}
+           {formik.values.type === "ONE_TIME" && (
+             <div className="flex flex-col gap-1.5">
+               <ITDatePicker
+                 label="Fecha de Vencimiento"
+                 name="dueDate"
+                 value={formik.values.dueDate}
+                 onChange={(e) =>
+                   formik.setFieldValue("dueDate", e.target.value)
+                 }
+                 error={formik.errors.dueDate as string}
+                 touched={!!formik.touched.dueDate}
+               />
+             </div>
+           )}
+           {formik.values.type === "MONTHLY" && (
+             <ITInput
+               label="Día de Vencimiento (1-28)"
+               name="dueDay"
+               type="number"
+               value={String(formik.values.dueDay)}
+               onChange={formik.handleChange}
+               error={formik.errors.dueDay as string}
+               placeholder="Ej. 5 (día 5 de cada mes)"
+             />
+           )}
 
           <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
             <ITButton

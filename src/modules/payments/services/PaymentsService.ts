@@ -22,7 +22,7 @@ export interface PaymentSummaryResponse {
 export interface PaymentResponse {
   id: string;
   residentId: string;
-  feeId: string;
+  feeId: string | null;
   amount: number;
   reference: string | null;
   status: "PENDING" | "PAID" | "CANCELLED" | "FAILED";
@@ -80,9 +80,10 @@ export interface UpdateFeeDTO {
 
 export interface CreatePaymentDTO {
   residentId: string;
-  feeId: string;
+  feeId?: string;
   amount: number;
   reference?: string;
+  concept?: string;
   status?: "PENDING" | "PAID" | "CANCELLED" | "FAILED";
   paidAt?: string;
   period?: string;
