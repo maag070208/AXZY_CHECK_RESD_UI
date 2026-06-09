@@ -219,20 +219,6 @@ export const ZonesModal = ({ isOpen, onClose }: Props) => {
             </div>
           </section>
         </div>
-
-        {/* Standardized Footer */}
-        <div className="flex-none flex justify-end items-center px-10 py-8 border-t border-slate-100 bg-slate-50/50">
-          <ITButton
-            type="button"
-            variant="filled"
-            onClick={onClose}
-            color="secondary"
-          >
-            <span className="uppercase tracking-widest text-[10px] font-black">
-              Cerrar Administrador
-            </span>
-          </ITButton>
-        </div>
       </div>
     </ITDialog>
   );

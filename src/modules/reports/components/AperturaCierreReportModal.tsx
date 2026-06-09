@@ -1,3 +1,4 @@
+import { showLoader, hideLoader } from "@app/core/store/loader/loader.slice";
 import { showToast } from "@app/core/store/toast/toast.slice";
 import {
   ITButton,
@@ -140,6 +141,7 @@ export const AperturaCierreReportModal = ({
     };
 
     setIsGenerating(true);
+    dispatch(showLoader());
     try {
       const response = configToEdit
         ? await updateReportConfiguration(configToEdit.id, payload)
@@ -170,6 +172,7 @@ export const AperturaCierreReportModal = ({
       );
     } finally {
       setIsGenerating(false);
+      dispatch(hideLoader());
     }
   };
 

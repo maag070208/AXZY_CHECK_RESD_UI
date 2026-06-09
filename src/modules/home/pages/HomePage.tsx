@@ -25,6 +25,7 @@ import { useNavigate } from "react-router-dom";
 import { HomeCardItem } from "../components/HomeCardItem";
 import { AnalyticsTab } from "../components/tabs/AnalyticsTab";
 import { OperationalDetailTab } from "../components/tabs/OperationalDetailTab";
+import ResidentHomePanel from "../components/ResidentHomePanel";
 import { ITBadget, ITLoader, useITTheme, ITDatePicker } from "@axzydev/axzy_ui_system";
 import dayjs from "dayjs";
 import {
@@ -76,9 +77,21 @@ const HomePage = () => {
   const [recentIncidents, setRecentIncidents] = useState<RecentIncident[]>([]);
   const [recentPayments, setRecentPayments] = useState<any[]>([]);
   const [loadingDashboard, setLoadingDashboard] = useState(true);
-  const [paymentDateRange, setPaymentDateRange] = useState<[Date | null, Date | null]>([dayjs().startOf("month").toDate(), dayjs().toDate()]);
+  const [paymentDateRange, setPaymentDateRange] = useState<[Date | null, Date | null]>([dayjs().startOf("month").toDate(), dayjs().endOf("month").startOf("day").toDate()]);
+  const [committedPaymentRange, setCommittedPaymentRange] = useState<[Date | null, Date | null]>([dayjs().startOf("month").toDate(), dayjs().endOf("month").startOf("day").toDate()]);
+
+  useEffect(() => {
+    if (paymentDateRange[0] && paymentDateRange[1]) {
+      setCommittedPaymentRange(paymentDateRange);
+    }
+  }, [paymentDateRange]);
 
   const canViewMetrics = user.role === "ADMIN" || user.role === "LIDER" || user.role === "SHIFT";
+
+  if (user.role === "RESDN") {
+    return <ResidentHomePanel />;
+  }
+
   const currentDate = dayjs().format("DD MMM YYYY");
   const primaryHex = colorHex(palette, "primary");
   const primaryShades = useMemo(() => buildShades(primaryHex), [primaryHex]);
@@ -135,10 +148,8 @@ const HomePage = () => {
   }, [user, navigate]);
 
   useEffect(() => {
-    if (paymentDateRange[0] && paymentDateRange[1]) {
-      loadDashboard(paymentDateRange);
-    }
-  }, [loadDashboard, paymentDateRange]);
+    loadDashboard(committedPaymentRange);
+  }, [loadDashboard, committedPaymentRange]);
 
   const tabs = useMemo(() => {
     const items: Array<{ key: "nav" | "analytics" | "detail"; label: string; icon: ReactElement }> = [

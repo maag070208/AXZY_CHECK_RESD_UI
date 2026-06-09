@@ -7,14 +7,13 @@ import {
   ITLoader,
   ITSearchSelect,
   ITSlideToggle,
+  useITTheme,
 } from "@axzydev/axzy_ui_system";
 import { useEffect, useMemo, useState } from "react";
 import {
   FaCheck,
-  FaChevronDown,
   FaChevronLeft,
   FaChevronRight,
-  FaChevronUp,
   FaClipboardCheck,
   FaCopy,
   FaInfoCircle,
@@ -38,16 +37,49 @@ import {
   createRoute,
   getRouteById,
   ILocationCreate,
+  ITaskCreate,
   updateRoute,
 } from "../services/RoutesService";
+import { buildShades, colorHex } from "../../home/utils/theme.utils";
+
+interface RecurringTaskData {
+  description: string;
+  reqPhoto: boolean;
+}
+
+interface RecurringLocationData {
+  location?: { id: string; name: string };
+  tasks: RecurringTaskData[];
+}
+
+interface RecurringGuardData {
+  id: string;
+}
+
+interface RouteData {
+  title: string;
+  active?: boolean;
+  recurringLocations?: RecurringLocationData[];
+  guards?: RecurringGuardData[];
+}
+
+const hexToRgba = (hex: string, alpha: number) => {
+  const h = hex.replace("#", "").trim();
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
 
 const CreateRoutePage = () => {
   const { id } = useParams();
   const isEditing = !!id;
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { palette } = useITTheme();
+  const primaryHex = colorHex(palette, "primary");
+  const primaryShades = useMemo(() => buildShades(primaryHex), [primaryHex]);
 
-  // --- States ---
   const [currentStep, setCurrentStep] = useState(0);
   const [title, setTitle] = useState("");
   const [addedLocations, setAddedLocations] = useState<ILocationCreate[]>([]);
@@ -64,7 +96,7 @@ const CreateRoutePage = () => {
 
   useEffect(() => {
     fetchInitialData();
-    if (isEditing) fetchFullData(id);
+    if (isEditing) fetchFullData(id!);
   }, [id]);
 
   const fetchFullData = async (routeId: string) => {
@@ -72,22 +104,22 @@ const CreateRoutePage = () => {
     try {
       const res = await getRouteById(routeId);
       if (res.success && res.data) {
-        const data = res.data;
+        const data = res.data as RouteData;
         setTitle(data.title);
         setActive(data.active ?? true);
         setAddedLocations(
-          (data.recurringLocations || []).map((rl: any) => ({
-            locationId: rl.location?.id,
+          (data.recurringLocations || []).map((rl: RecurringLocationData) => ({
+            locationId: rl.location?.id ?? "",
             locationName: rl.location?.name,
-            tasks: (rl.tasks || []).map((t: any) => ({
+            tasks: (rl.tasks || []).map((t: RecurringTaskData) => ({
               description: t.description,
               reqPhoto: t.reqPhoto,
             })),
           })),
         );
-        setSelectedGuards(data.guards?.map((g: any) => g.id) || []);
+        setSelectedGuards(data.guards?.map((g: RecurringGuardData) => g.id) || []);
       }
-    } catch (e) {
+    } catch (_e) {
       dispatch(showToast({ message: "Error al cargar datos", type: "error" }));
     } finally {
       setFetchingData(false);
@@ -100,10 +132,10 @@ const CreateRoutePage = () => {
     if (zonesRes.success) setZones(zonesRes.data || []);
     if (usersRes.success) {
       setAllGuards(
-        usersRes.data?.filter((u: any) => {
+        (usersRes.data || []).filter((u: UserResponse) => {
           const role = typeof u.role === "object" ? u.role.name : u.role;
           return ["GUARD", "SHIFT", "MAINT"].includes(role) && u.active;
-        }) || [],
+        }),
       );
     }
   };
@@ -125,15 +157,15 @@ const CreateRoutePage = () => {
     const zoneLocs = allLocations.filter(
       (l) =>
         String(l.zoneId) === String(selectedZoneId) &&
-        !addedLocations.find((al) => al.locationId === (l.id as any)),
+        !addedLocations.find((al) => al.locationId === String(l.id)),
     );
     if (zoneLocs.length === 0) return;
     setAddedLocations([
       ...addedLocations,
       ...zoneLocs.map((l) => ({
-        locationId: l.id as any,
+        locationId: String(l.id),
         locationName: l.name,
-        tasks: [],
+        tasks: [] as ITaskCreate[],
       })),
     ]);
     setSelectedZoneId("");
@@ -167,16 +199,6 @@ const CreateRoutePage = () => {
     );
   };
 
-  const moveLocation = (idx: number, direction: "up" | "down") => {
-    const newIdx = direction === "up" ? idx - 1 : idx + 1;
-    if (newIdx < 0 || newIdx >= addedLocations.length) return;
-    const copy = [...addedLocations];
-    const item = copy[idx];
-    copy.splice(idx, 1);
-    copy.splice(newIdx, 0, item);
-    setAddedLocations(copy);
-  };
-
   const toggleGuard = (id: string) => {
     setSelectedGuards((prev) =>
       prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id],
@@ -188,7 +210,7 @@ const CreateRoutePage = () => {
       allGuards.filter(
         (g) =>
           g.name.toLowerCase().includes(guardSearch.toLowerCase()) ||
-          g.lastName?.toLowerCase().includes(guardSearch.toLowerCase()),
+          (g.lastName ?? "").toLowerCase().includes(guardSearch.toLowerCase()),
       ),
     [allGuards, guardSearch],
   );
@@ -197,7 +219,7 @@ const CreateRoutePage = () => {
     () =>
       allLocations.filter(
         (l) =>
-          !addedLocations.find((al) => al.locationId === (l.id as any)),
+          !addedLocations.find((al) => al.locationId === String(l.id)),
       ),
     [allLocations, addedLocations],
   );
@@ -218,15 +240,14 @@ const CreateRoutePage = () => {
         dispatch(showToast({ message: "Ruta guardada", type: "success" }));
         navigate("/routes");
       }
-    }
-    finally {
+    } finally {
       dispatch(hideLoader());
     }
   };
 
   const steps = [
     {
-      title: "Identificación",
+      title: "Identificacion",
       subtitle: "Nombre de Recorrido",
       icon: <FaInfoCircle />,
       isValid: !!title,
@@ -238,14 +259,14 @@ const CreateRoutePage = () => {
       isValid: addedLocations.length > 0,
     },
     {
-      title: "Asignación",
+      title: "Asignacion",
       subtitle: "Personal",
       icon: <FaUserFriends />,
       isValid: selectedGuards.length > 0,
     },
     {
       title: "Resumen",
-      subtitle: "Verificación",
+      subtitle: "Verificacion",
       icon: <FaClipboardCheck />,
       isValid: true,
     },
@@ -253,25 +274,32 @@ const CreateRoutePage = () => {
 
   if (fetchingData)
     return (
-      <div className="h-screen w-full flex flex-col items-center justify-center  ">
+      <div className="h-screen w-full flex flex-col items-center justify-center">
         <ITLoader size="lg" />
         <p className="mt-6 text-slate-400 font-black uppercase tracking-[0.2em] text-[10px]">
-          Sincronizando configuración operativa...
+          Sincronizando configuracion operativa...
         </p>
       </div>
     );
 
   return (
-    <div className="h-full   flex overflow-hidden">
+    <div className="h-full flex overflow-hidden">
       {/* SIDEBAR STEPS */}
       <aside className="w-[280px] bg-white border-r border-slate-100 flex flex-col p-6 shrink-0 shadow-xl shadow-slate-200/40 relative z-20">
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-7 h-7 rounded-lg bg-emerald-500 text-white flex items-center justify-center shadow-md shadow-emerald-100">
+            <div
+              className="w-7 h-7 rounded-lg text-white flex items-center justify-center shadow-md"
+              style={{
+                backgroundColor: primaryShades[500],
+                boxShadow: `0 4px 6px -1px ${hexToRgba(primaryShades[100], 0.4)}`,
+              }}
+            >
               <FaRoute size={14} />
             </div>
             <h1 className="text-sm font-black text-slate-800 uppercase tracking-tighter">
-              Asistente <span className="text-emerald-500">Rutas</span>
+              Asistente{" "}
+              <span style={{ color: primaryShades[500] }}>Rutas</span>
             </h1>
           </div>
         </div>
@@ -283,35 +311,49 @@ const CreateRoutePage = () => {
             return (
               <div
                 key={idx}
-                className={`flex items-center gap-4 p-4 rounded-[20px] transition-all duration-300 ${
+                className={`flex items-center gap-4 p-4 rounded-[20px] transition-all duration-300 ${isActive ? "" : "opacity-60 grayscale hover:grayscale-0 hover:opacity-100"}`}
+                style={
                   isActive
-                    ? "bg-emerald-50 border border-emerald-100 shadow-md shadow-emerald-100/20"
-                    : "opacity-60 grayscale hover:grayscale-0 hover:opacity-100"
-                }`}
+                    ? {
+                        backgroundColor: primaryShades[50],
+                        borderColor: primaryShades[100],
+                        borderWidth: 1,
+                        boxShadow: `0 4px 6px -1px ${hexToRgba(primaryShades[100], 0.2)}`,
+                      }
+                    : {}
+                }
               >
                 <div
-                  className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${
-                    isActive
-                      ? "bg-emerald-500 text-white shadow-sm"
+                  className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300"
+                  style={{
+                    backgroundColor: isActive
+                      ? primaryShades[500]
                       : isCompleted
-                        ? "bg-emerald-100 text-emerald-600"
-                        : "bg-slate-50 text-slate-400"
-                  }`}
+                        ? primaryShades[100]
+                        : "",
+                    color: isActive
+                      ? "#fff"
+                      : isCompleted
+                        ? primaryShades[600]
+                        : "",
+                  }}
                 >
                   {isCompleted ? <FaCheck size={12} /> : step.icon}
                 </div>
                 <div className="flex-1 min-w-0">
                   <h4
-                    className={`text-[10px] font-black uppercase tracking-widest leading-none ${
-                      isActive ? "text-emerald-700" : "text-slate-500"
-                    }`}
+                    className="text-[10px] font-black uppercase tracking-widest leading-none"
+                    style={{ color: isActive ? primaryShades[700] : "" }}
                   >
                     {step.title}
                   </h4>
                   <p
-                    className={`text-[8px] font-bold mt-1 uppercase tracking-tight ${
-                      isActive ? "text-emerald-600/60" : "text-slate-300"
-                    }`}
+                    className="text-[8px] font-bold mt-1 uppercase tracking-tight"
+                    style={{
+                      color: isActive
+                        ? hexToRgba(primaryShades[600], 0.6)
+                        : "",
+                    }}
                   >
                     {step.subtitle}
                   </p>
@@ -325,7 +367,7 @@ const CreateRoutePage = () => {
           <div className="flex items-center gap-3 text-slate-400">
             <FaInfoCircle size={14} />
             <span className="text-[9px] font-black uppercase tracking-widest">
-              ID: {isEditing ? id?.slice(-8) : "NUEVA_RUTA"}
+              ID: {isEditing ? id!.slice(-8) : "NUEVA_RUTA"}
             </span>
           </div>
         </div>
@@ -333,7 +375,6 @@ const CreateRoutePage = () => {
 
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 flex flex-col overflow-hidden relative">
-        {/* Main Step Container */}
         <div className="flex-1 overflow-hidden flex flex-col">
           <div className="flex-1 min-h-0">
             {/* STEP 0: IDENTITY */}
@@ -342,7 +383,10 @@ const CreateRoutePage = () => {
                 <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">
                   <section>
                     <div className="flex items-center gap-2 mb-4">
-                      <div className="w-1 h-3 bg-emerald-500 rounded-full" />
+                      <div
+                        className="w-1 h-3 rounded-full"
+                        style={{ backgroundColor: primaryShades[500] }}
+                      />
                       <h2 className="text-lg font-black text-slate-800 uppercase tracking-tighter">
                         Identidad
                       </h2>
@@ -375,12 +419,15 @@ const CreateRoutePage = () => {
                   </section>
 
                   <div className="bg-slate-50 p-5 rounded-2xl flex items-start gap-3 border border-slate-100">
-                    <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-emerald-500 shadow-sm shrink-0">
+                    <div
+                      className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm shrink-0"
+                      style={{ color: primaryShades[500] }}
+                    >
                       <FaInfoCircle size={14} />
                     </div>
                     <div>
                       <h5 className="text-[9px] font-black text-slate-700 uppercase tracking-tight">
-                        Validación de Seguridad
+                        Validacion de Seguridad
                       </h5>
                       <p className="text-[9px] text-slate-500 leading-tight font-medium">
                         Datos del recorrido operativo para la comunidad.
@@ -397,7 +444,10 @@ const CreateRoutePage = () => {
                 <div className="shrink-0 p-6 lg:px-8 border-b border-slate-50 bg-white">
                   <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
                     <div className="flex items-center gap-2">
-                      <div className="w-1 h-4 bg-emerald-500 rounded-full" />
+                      <div
+                        className="w-1 h-4 rounded-full"
+                        style={{ backgroundColor: primaryShades[500] }}
+                      />
                       <h2 className="text-xl font-black text-slate-800 uppercase tracking-tighter">
                         Puntos de Control
                       </h2>
@@ -423,7 +473,7 @@ const CreateRoutePage = () => {
                             value: l.id,
                           }))}
                           value={selectedLocId}
-                          onChange={setSelectedLocId as any}
+                          onChange={(val) => setSelectedLocId(String(val))}
                         />
                       </div>
                       <div className="flex gap-2">
@@ -453,12 +503,14 @@ const CreateRoutePage = () => {
                         Secuencia ({addedLocations.length})
                       </h4>
                       {addedLocations.length > 0 && (
-                        <button
+                        <ITButton
                           onClick={() => setAddedLocations([])}
-                          className="text-[9px] font-black text-red-400 uppercase tracking-widest hover:text-red-600 transition-all"
+                          variant="text"
+                          color="error"
+                          size="small"
                         >
                           Limpiar
-                        </button>
+                        </ITButton>
                       )}
                     </div>
 
@@ -477,24 +529,13 @@ const CreateRoutePage = () => {
                             className="bg-white min-h-[100px] border border-slate-100 p-4 rounded-[24px] shadow-sm hover:shadow-md transition-all"
                           >
                             <div className="flex justify-between items-start mb-4">
-                              <div className="flex items-center gap-2">
-                                <div className="flex flex-col">
-                                  <button
-                                    disabled={idx === 0}
-                                    onClick={() => moveLocation(idx, "up")}
-                                    className="text-slate-300 hover:text-emerald-500 disabled:opacity-0"
-                                  >
-                                    <FaChevronUp size={8} />
-                                  </button>
-                                  <button
-                                    disabled={idx === addedLocations.length - 1}
-                                    onClick={() => moveLocation(idx, "down")}
-                                    className="text-slate-300 hover:text-emerald-500 disabled:opacity-0"
-                                  >
-                                    <FaChevronDown size={8} />
-                                  </button>
-                                </div>
-                                <div className="w-7 h-7 rounded-lg bg-emerald-500 text-white flex items-center justify-center text-[10px] font-black">
+                               <div className="flex items-center gap-2">
+                                <div
+                                  className="w-7 h-7 rounded-lg text-white flex items-center justify-center text-[10px] font-black"
+                                  style={{
+                                    backgroundColor: primaryShades[500],
+                                  }}
+                                >
                                   {idx + 1}
                                 </div>
                                 <span className="text-[10px] font-black text-slate-800 uppercase truncate max-w-[200px] text-wrap">
@@ -503,12 +544,13 @@ const CreateRoutePage = () => {
                               </div>
                               <div className="flex items-center gap-1">
                                 {loc.tasks.length > 0 && (
-                                  <button
+                                  <ITButton
                                     onClick={() => handleCloneTasks(idx)}
-                                    className="p-1.5 text-slate-300 hover:text-emerald-500"
+                                    variant="icon-only"
+                                    size="small"
                                   >
                                     <FaCopy size={10} />
-                                  </button>
+                                  </ITButton>
                                 )}
                                 <ITButton
                                   onClick={() =>
@@ -518,7 +560,7 @@ const CreateRoutePage = () => {
                                       ),
                                     )
                                   }
-                                  variant="outlined"
+                                  variant="icon-only"
                                   color="danger"
                                   size="small"
                                 >
@@ -533,8 +575,8 @@ const CreateRoutePage = () => {
                                   key={tIdx}
                                   className="flex items-center gap-1.5 bg-slate-50 p-1.5 rounded-xl border border-slate-100"
                                 >
-                                  <input
-                                    className="flex-1 bg-transparent text-[9px] font-bold text-slate-600 outline-none px-1 uppercase"
+                                  <ITInput
+                                    name={`task-${idx}-${tIdx}`}
                                     placeholder="Tarea..."
                                     value={task.description}
                                     onChange={(e) =>
@@ -544,25 +586,33 @@ const CreateRoutePage = () => {
                                         e.target.value,
                                       )
                                     }
+                                    onBlur={() => {}}
+                                    className="!text-[9px] !py-0 !px-1 !border-0 !shadow-none"
                                   />
-                                  <button
+                                  <ITButton
                                     onClick={() => {
                                       const copy = [...addedLocations];
                                       copy[idx].tasks.splice(tIdx, 1);
                                       setAddedLocations(copy);
                                     }}
-                                    className="text-slate-300 hover:text-red-500"
+                                    variant="icon-only"
+                                    size="small"
+                                    color="error"
                                   >
-                                    <FaPlus size={12} className="rotate-45" />
-                                  </button>
+                                    <FaPlus
+                                      size={12}
+                                      className="rotate-45"
+                                    />
+                                  </ITButton>
                                 </div>
                               ))}
-                              <button
+                              <ITButton
                                 onClick={() => handleAddTask(idx)}
-                                className="w-full py-2 border border-dashed border-slate-200 rounded-xl text-[8px] font-black text-slate-400 hover:border-emerald-500 hover:text-emerald-500 transition-all uppercase tracking-widest flex items-center justify-center gap-1.5"
+                                variant="outlined"
+                                size="small"
                               >
                                 <FaPlus size={7} /> Tarea
-                              </button>
+                              </ITButton>
                             </div>
                           </div>
                         ))}
@@ -579,25 +629,24 @@ const CreateRoutePage = () => {
                 <div className="shrink-0 p-6 lg:px-8 border-b border-slate-50 bg-white">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-2">
-                      <div className="w-1 h-4 bg-emerald-500 rounded-full" />
+                      <div
+                        className="w-1 h-4 rounded-full"
+                        style={{ backgroundColor: primaryShades[500] }}
+                      />
                       <h2 className="text-xl font-black text-slate-800 uppercase tracking-tighter">
                         Personal Operativo
                       </h2>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="relative w-[200px]">
-                        <FaSearch
-                          className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                          size={10}
-                        />
-                        <input
-                          type="text"
-                          placeholder="Filtrar..."
-                          className="w-full pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-bold uppercase focus:border-emerald-500 outline-none transition-all shadow-sm"
-                          value={guardSearch}
-                          onChange={(e) => setGuardSearch(e.target.value)}
-                        />
-                      </div>
+                      <ITInput
+                        name="guardSearch"
+                        placeholder="Filtrar..."
+                        value={guardSearch}
+                        onChange={(e) => setGuardSearch(e.target.value)}
+                        onBlur={() => {}}
+                        iconLeft={<FaSearch size={10} />}
+                        className="!w-[200px]"
+                      />
                       <ITButton
                         size="small"
                         variant="outlined"
@@ -631,18 +680,24 @@ const CreateRoutePage = () => {
                         <div
                           key={guard.id}
                           onClick={() => toggleGuard(guard.id)}
-                          className={`cursor-pointer p-4 rounded-[24px] border-2 transition-all flex items-center gap-3 ${
-                            isSelected
-                              ? "border-emerald-500 bg-emerald-50/30"
-                              : "border-slate-50 bg-white hover:border-slate-100"
-                          }`}
+                          className="cursor-pointer p-4 rounded-[24px] border-2 transition-all flex items-center gap-3"
+                          style={{
+                            borderColor: isSelected
+                              ? primaryShades[500]
+                              : "",
+                            backgroundColor: isSelected
+                              ? hexToRgba(primaryShades[50], 0.3)
+                              : "",
+                          }}
                         >
                           <div
-                            className={`w-10 h-10 rounded-xl flex items-center justify-center text-[10px] font-black transition-all ${
-                              isSelected
-                                ? "bg-emerald-500 text-white"
-                                : "bg-slate-50 text-slate-400"
-                            }`}
+                            className="w-10 h-10 rounded-xl flex items-center justify-center text-[10px] font-black transition-all"
+                            style={{
+                              backgroundColor: isSelected
+                                ? primaryShades[500]
+                                : "",
+                              color: isSelected ? "#fff" : "",
+                            }}
                           >
                             {guard.name[0]}
                             {guard.lastName?.[0]}
@@ -656,7 +711,10 @@ const CreateRoutePage = () => {
                             </span>
                           </div>
                           {isSelected && (
-                            <FaCheck className="text-emerald-500" size={10} />
+                            <FaCheck
+                              style={{ color: primaryShades[500] }}
+                              size={10}
+                            />
                           )}
                         </div>
                       );
@@ -670,10 +728,18 @@ const CreateRoutePage = () => {
             {currentStep === 3 && (
               <div className="h-full overflow-y-auto p-6 lg:p-8">
                 <div className="max-w-3xl mx-auto animate-in fade-in zoom-in duration-300">
-                  <section className="bg-white rounded-[32px] border border-slate-100 p-10 shadow-xl shadow-slate-200/30 relative overflow-hidden">
+                  <section
+                    className="bg-white rounded-[32px] border border-slate-100 p-10 relative overflow-hidden"
+                    style={{
+                      boxShadow: `0 20px 25px -5px ${hexToRgba(primaryShades[100], 0.15)}`,
+                    }}
+                  >
                     <div className="relative z-10 space-y-10">
                       <div className="border-b border-slate-50 pb-8">
-                        <span className="text-emerald-600 font-black uppercase text-[9px] tracking-[0.3em] block mb-3">
+                        <span
+                          className="font-black uppercase text-[9px] tracking-[0.3em] block mb-3"
+                          style={{ color: primaryShades[600] }}
+                        >
                           Resumen Final
                         </span>
                         <h2 className="text-3xl font-black text-slate-800 uppercase tracking-tighter leading-none">
@@ -700,12 +766,21 @@ const CreateRoutePage = () => {
                         </div>
                       </div>
 
-                      <div className="bg-emerald-50 p-6 rounded-[24px] flex items-center gap-4">
-                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-emerald-500 shadow-sm shrink-0">
+                      <div
+                        className="p-6 rounded-[24px] flex items-center gap-4"
+                        style={{ backgroundColor: primaryShades[50] }}
+                      >
+                        <div
+                          className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm shrink-0"
+                          style={{ color: primaryShades[500] }}
+                        >
                           <FaCheck size={14} />
                         </div>
-                        <p className="text-[9px] font-black text-emerald-700 uppercase tracking-tight">
-                          Configuración validada exitosamente. <br />
+                        <p
+                          className="text-[9px] font-black uppercase tracking-tight"
+                          style={{ color: primaryShades[700] }}
+                        >
+                          Configuracion validada exitosamente. <br />
                           Listo para el despliegue.
                         </p>
                       </div>
@@ -732,7 +807,7 @@ const CreateRoutePage = () => {
             <div className="flex items-center gap-2">
               <FaChevronLeft size={7} />
               <span className="text-[9px] font-black uppercase tracking-widest">
-                {currentStep === 0 ? "Salir" : "Atrás"}
+                {currentStep === 0 ? "Salir" : "Atras"}
               </span>
             </div>
           </ITButton>
@@ -743,7 +818,7 @@ const CreateRoutePage = () => {
                 onClick={() => setCurrentStep((prev) => prev + 1)}
                 disabled={!steps[currentStep].isValid}
                 color="primary"
-                className="!rounded-lg !px-6 !h-9 shadow-md shadow-emerald-100"
+                className="!rounded-lg !px-6 !h-9"
               >
                 <div className="flex items-center gap-2">
                   <span className="text-[9px] font-black uppercase tracking-widest">
@@ -756,7 +831,7 @@ const CreateRoutePage = () => {
               <ITButton
                 onClick={handleSave}
                 color="primary"
-                className="!rounded-lg !px-8 !h-9 shadow-md shadow-emerald-200"
+                className="!rounded-lg !px-8 !h-9"
               >
                 <div className="flex items-center gap-2">
                   <FaClipboardCheck size={10} />
@@ -773,7 +848,7 @@ const CreateRoutePage = () => {
       <ITDialog
         isOpen={showUserModal}
         onClose={() => setShowUserModal(false)}
-        title="Registro Rápido de Guardia"
+        title="Registro Rapido de Guardia"
       >
         <CreateUserWizard
           onCancel={() => setShowUserModal(false)}

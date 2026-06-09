@@ -1,5 +1,6 @@
 import { ModuleHeader } from "@app/core/components/ModuleHeader";
 import { showToast } from "@app/core/store/toast/toast.slice";
+import { showLoader, hideLoader } from "@app/core/store/loader/loader.slice";
 import {
   ITBadget,
   ITButton,
@@ -79,6 +80,7 @@ const ResidentsPage = () => {
   };
 
   const handleCreateOrUpdate = async (data: any, keepOpen?: boolean) => {
+    dispatch(showLoader());
     try {
       let res;
       if (editingResident) {
@@ -109,12 +111,15 @@ const ResidentsPage = () => {
       }
     } catch (error) {
       dispatch(showToast({ message: "Error inesperado", type: "error" }));
+    } finally {
+      dispatch(hideLoader());
     }
   };
 
   const confirmDelete = async () => {
     if (!residentToDeleteId || isDeleting) return;
     setIsDeleting(true);
+    dispatch(showLoader());
     try {
       const res = await deleteResident(residentToDeleteId);
       if (res.success) {
@@ -130,6 +135,7 @@ const ResidentsPage = () => {
       );
     } finally {
       setIsDeleting(false);
+      dispatch(hideLoader());
     }
   };
 

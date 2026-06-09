@@ -16,9 +16,10 @@ const validationSchema = Yup.object().shape({
 
 interface RegisterFormProps {
   onSubmit: (values: IAuthRegister) => void;
+  loading?: boolean;
 }
 
-const RegisterForm = ({ onSubmit }: RegisterFormProps) => {
+const RegisterForm = ({ onSubmit, loading = false }: RegisterFormProps) => {
   return (
     <Formik
       initialValues={{ name: "", username: "", password: "", confirmPassword: "", roleId: "GUARD_ROLE_ID" }}
@@ -82,12 +83,20 @@ const RegisterForm = ({ onSubmit }: RegisterFormProps) => {
 
           <ITButton
             type="submit"
-            label="Registrarse"
-            disabled={!isValid || !dirty}
+            disabled={!isValid || !dirty || loading}
             variant="filled"
             color="primary"
             className="w-full"
-          />
+          >
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Registrando...
+              </span>
+            ) : (
+              "Registrarse"
+            )}
+          </ITButton>
         </Form>
       )}
     </Formik>

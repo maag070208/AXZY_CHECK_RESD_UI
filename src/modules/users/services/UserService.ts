@@ -24,6 +24,7 @@ export interface UserResponse {
     endTime: string;
   } | null;
   assignmentLogs?: any[];
+  assignments?: { id: string }[];
 }
 
 export interface CreateUserDto {

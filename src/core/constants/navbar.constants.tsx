@@ -8,14 +8,23 @@ import {
   FaMoneyBill,
   FaShieldAlt,
   FaUsers,
+  FaWrench,
+  FaRoute,
 } from "react-icons/fa";
 import { useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
+
+const ALL = ["ADMIN", "LIDER", "SHIFT", "GUARD", "MAINT", "RESDN"];
+const ADMIN = ["ADMIN", "LIDER"];
+const ADMIN_SHIFT = ["ADMIN", "LIDER", "SHIFT"];
+const ADMIN_SHIFT_RESDN = ["ADMIN", "LIDER", "SHIFT", "RESDN"];
+const RESDN = ["RESDN"];
 
 export const useNavigationItems = (): any[] => {
   const navigate = useNavigate();
   const location = useLocation();
   const user = useSelector((state: AppState) => state.auth);
+  const role = user?.role || "";
 
   const isRouteActive = (path: string, subroutes?: string[]) => {
     if (subroutes?.length) {
@@ -28,18 +37,20 @@ export const useNavigationItems = (): any[] => {
     );
   };
 
-  const baseItems: any[] = [
+  const allItems: any[] = [
     {
       id: "home",
       label: "Inicio",
       action: () => navigate("/home"),
       isActive: isRouteActive("/home"),
       icon: <FaHome />,
+      roles: ALL,
     },
     {
       id: "residencial",
       label: "Residencial",
       icon: <FaBuilding />,
+      roles: ADMIN_SHIFT,
       isActive: isRouteActive("/residents") || isRouteActive("/properties") || isRouteActive("/locations"),
       subitems: [
         {
@@ -47,25 +58,29 @@ export const useNavigationItems = (): any[] => {
           label: "Residentes",
           action: () => navigate("/residents"),
           isActive: isRouteActive("/residents"),
+          roles: ADMIN,
         },
         {
           id: "properties",
           label: "Propiedades",
           action: () => navigate("/properties"),
           isActive: isRouteActive("/properties"),
+          roles: ADMIN,
         },
         {
           id: "locations",
           label: "Ubicaciones",
           action: () => navigate("/locations"),
           isActive: isRouteActive("/locations"),
+          roles: ADMIN_SHIFT,
         },
-      ]
+      ],
     },
     {
       id: "operacion",
       label: "Operación",
       icon: <FaExclamationTriangle />,
+      roles: ADMIN_SHIFT,
       isActive: isRouteActive("/accesses") || isRouteActive("/incidents") || isRouteActive("/maintenances") || isRouteActive("/kardex") || isRouteActive("/complaints"),
       subitems: [
         {
@@ -73,37 +88,43 @@ export const useNavigationItems = (): any[] => {
           label: "Control de Accesos",
           action: () => navigate("/accesses"),
           isActive: isRouteActive("/accesses"),
+          roles: ADMIN_SHIFT_RESDN,
         },
         {
           id: "incidents",
           label: "Incidencias",
           action: () => navigate("/incidents"),
           isActive: isRouteActive("/incidents"),
+          roles: ADMIN_SHIFT,
         },
         {
           id: "maintenances",
           label: "Mantenimientos",
           action: () => navigate("/maintenances"),
           isActive: isRouteActive("/maintenances"),
+          roles: ADMIN_SHIFT,
         },
         {
           id: "kardex",
           label: "Kardex",
           action: () => navigate("/kardex"),
           isActive: isRouteActive("/kardex"),
+          roles: ADMIN_SHIFT,
         },
         {
           id: "complaints",
           label: "Buzón de Quejas",
           action: () => navigate("/complaints"),
           isActive: isRouteActive("/complaints"),
+          roles: [...ADMIN, ...RESDN],
         },
-      ]
+      ],
     },
     {
       id: "vigilancia",
       label: "Vigilancia",
       icon: <FaShieldAlt />,
+      roles: ADMIN_SHIFT,
       isActive: isRouteActive("/routes") || isRouteActive("/rounds") || isRouteActive("/guards") || isRouteActive("/schedules"),
       subitems: [
         {
@@ -111,31 +132,36 @@ export const useNavigationItems = (): any[] => {
           label: "Historial de Rondas",
           action: () => navigate("/rounds"),
           isActive: isRouteActive("/rounds"),
+          roles: ADMIN_SHIFT,
         },
         {
           id: "routes",
           label: "Configuración de Rutas",
           action: () => navigate("/routes"),
           isActive: isRouteActive("/routes"),
+          roles: ADMIN_SHIFT,
         },
         {
           id: "guards",
           label: "Guardias",
           action: () => navigate("/guards"),
           isActive: isRouteActive("/guards"),
+          roles: ADMIN_SHIFT_RESDN,
         },
         {
           id: "schedules",
           label: "Horarios",
           action: () => navigate("/schedules"),
           isActive: isRouteActive("/schedules"),
+          roles: ADMIN,
         },
-      ]
+      ],
     },
     {
       id: "finanzas",
       label: "Finanzas",
       icon: <FaMoneyBill />,
+      roles: ADMIN_SHIFT,
       isActive: isRouteActive("/payments") || isRouteActive("/fees"),
       subitems: [
         {
@@ -143,18 +169,52 @@ export const useNavigationItems = (): any[] => {
           label: "Control de Pagos",
           action: () => navigate("/payments"),
           isActive: isRouteActive("/payments"),
+          roles: ADMIN_SHIFT_RESDN,
         },
         {
           id: "fees",
           label: "Cuotas y Planes",
           action: () => navigate("/fees"),
           isActive: isRouteActive("/fees"),
+          roles: ADMIN,
         },
-      ]
+      ],
     },
   ];
 
-  if (user?.role === "RESDN") {
+  const sistemaItem = {
+    id: "sistema",
+    label: "Sistema",
+    icon: <FaCogs />,
+    roles: ADMIN,
+    isActive: isRouteActive("/users") || isRouteActive("/settings") || isRouteActive("/reports"),
+    subitems: [
+      {
+        id: "reports",
+        label: "Reportes",
+        action: () => navigate("/reports"),
+        isActive: isRouteActive("/reports"),
+        roles: ADMIN,
+      },
+      {
+        id: "users",
+        label: "Usuarios",
+        action: () => navigate("/users"),
+        isActive: isRouteActive("/users"),
+        roles: ADMIN,
+      },
+      {
+        id: "settings",
+        label: "Catálogos",
+        action: () => navigate("/settings"),
+        isActive: isRouteActive("/settings"),
+        roles: ADMIN,
+      },
+    ],
+  };
+
+  // RESDN gets their own simplified menu
+  if (role === "RESDN") {
     return [
       {
         id: "home",
@@ -194,36 +254,60 @@ export const useNavigationItems = (): any[] => {
     ];
   }
 
-  if (user?.role === "ADMIN" || user?.role === "LIDER") {
-    baseItems.push({
-      id: "sistema",
-      label: "Sistema",
-      icon: <FaCogs />,
-      isActive: isRouteActive("/users") || isRouteActive("/settings") || isRouteActive("/reports"),
-      subitems: [
-        {
-          id: "reports",
-          label: "Reportes",
-          action: () => navigate("/reports"),
-          isActive: isRouteActive("/reports"),
-        },
-        {
-          id: "users",
-          label: "Usuarios",
-          action: () => navigate("/users"),
-          isActive: isRouteActive("/users"),
-        },
-        {
-          id: "settings",
-          label: "Catálogos",
-          action: () => navigate("/settings"),
-          isActive: isRouteActive("/settings"),
-        },
-      ]
-    });
+  // GUARD and MAINT get minimal sidebar
+  if (role === "GUARD" || role === "MAINT") {
+    const items = [
+      {
+        id: "home",
+        label: "Inicio",
+        action: () => navigate("/home"),
+        isActive: isRouteActive("/home"),
+        icon: <FaHome />,
+      },
+    ];
+    if (role === "MAINT") {
+      items.push({
+        id: "maintenances",
+        label: "Mantenimientos",
+        action: () => navigate("/maintenances"),
+        isActive: isRouteActive("/maintenances"),
+        icon: <FaWrench />,
+      });
+    }
+    if (role === "GUARD") {
+      items.push({
+        id: "rounds",
+        label: "Historial de Rondas",
+        action: () => navigate("/rounds"),
+        isActive: isRouteActive("/rounds"),
+        icon: <FaRoute />,
+      });
+    }
+    return items;
   }
 
-  return baseItems;
+  // Filter items by role for ADMIN, LIDER, SHIFT
+  const filterByRole = (items: any[], userRole: string): any[] => {
+    return items
+      .filter((item) => !item.roles || item.roles.includes(userRole))
+      .map((item) => {
+        if (item.subitems) {
+          const filteredSubitems = item.subitems.filter(
+            (sub: any) => !sub.roles || sub.roles.includes(userRole),
+          );
+          if (filteredSubitems.length === 0) return null;
+          return { ...item, subitems: filteredSubitems };
+        }
+        return item;
+      })
+      .filter(Boolean);
+  };
+
+  const filtered = filterByRole(allItems, role);
+  if (role === "ADMIN" || role === "LIDER") {
+    filtered.push(sistemaItem);
+  }
+  return filtered;
 };
 
 // ------------- NAVBAR (legacy) -----------------

@@ -2,6 +2,7 @@ import { ModuleHeader } from "@app/core/components/ModuleHeader";
 import { useCatalog } from "@app/core/hooks/catalog.hook";
 import { AppState } from "@app/core/store/store";
 import { showToast } from "@app/core/store/toast/toast.slice";
+import { showLoader, hideLoader } from "@app/core/store/loader/loader.slice";
 import {
   ITBadget,
   ITButton,
@@ -15,7 +16,6 @@ import dayjs from "dayjs";
 import { useCallback, useMemo, useState } from "react";
 import {
   FaCheck,
-  FaCheckCircle,
   FaExclamationTriangle,
   FaEye,
   FaTrash,
@@ -70,35 +70,45 @@ const IncidentsPage = () => {
   const confirmResolve = async () => {
     if (!incidentToResolveId) return;
     setResolvingId(incidentToResolveId);
-    const res = await resolveIncident(incidentToResolveId as any);
-    setResolvingId(null);
-    setIncidentToResolveId(null);
+    dispatch(showLoader());
+    try {
+      const res = await resolveIncident(incidentToResolveId as any);
+      setResolvingId(null);
+      setIncidentToResolveId(null);
 
-    if (res.success) {
-      setRefreshKey((p) => p + 1);
-      if (viewingIncident?.id === (incidentToResolveId as any)) {
-        setViewingIncident(null);
+      if (res.success) {
+        setRefreshKey((p) => p + 1);
+        if (viewingIncident?.id === (incidentToResolveId as any)) {
+          setViewingIncident(null);
+        }
+        dispatch(showToast({ message: "Incidencia resuelta", type: "success" }));
+      } else {
+        dispatch(
+          showToast({ message: "Error al resolver incidencia", type: "error" }),
+        );
       }
-      dispatch(showToast({ message: "Incidencia resuelta", type: "success" }));
-    } else {
-      dispatch(
-        showToast({ message: "Error al resolver incidencia", type: "error" }),
-      );
+    } finally {
+      dispatch(hideLoader());
     }
   };
 
   const confirmDelete = async () => {
     if (!incidentToDelete) return;
     setDeletingId(incidentToDelete.id as any);
-    const res = await deleteIncident(incidentToDelete.id);
-    setDeletingId(null);
-    setIncidentToDelete(null);
+    dispatch(showLoader());
+    try {
+      const res = await deleteIncident(incidentToDelete.id);
+      setDeletingId(null);
+      setIncidentToDelete(null);
 
-    if (res.success) {
-      dispatch(showToast({ message: "Reporte eliminado", type: "success" }));
-      setRefreshKey((p) => p + 1);
-    } else {
-      dispatch(showToast({ message: "Error al eliminar", type: "error" }));
+      if (res.success) {
+        dispatch(showToast({ message: "Reporte eliminado", type: "success" }));
+        setRefreshKey((p) => p + 1);
+      } else {
+        dispatch(showToast({ message: "Error al eliminar", type: "error" }));
+      }
+    } finally {
+      dispatch(hideLoader());
     }
   };
 
@@ -273,20 +283,19 @@ const IncidentsPage = () => {
         onClose={() => setIncidentToResolveId(null)}
         title="Confirmar Resolución"
       >
-        <div className="p-8 text-center">
-          <div className="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 border border-emerald-100 shadow-sm">
-            <FaCheckCircle size={32} />
+        <div className="flex flex-col bg-white overflow-hidden">
+          <div className="p-6 space-y-2">
+            <ITText className="text-lg font-semibold text-gray-900">
+              ¿Confirmar Resolución?
+            </ITText>
+            <ITText className="text-sm text-slate-500">
+              Se registrará la incidencia como atendida permanentemente.
+            </ITText>
           </div>
-          <h4 className="text-xl font-black text-slate-800 uppercase tracking-tight mb-2">
-            ¿Confirmar Resolución?
-          </h4>
-          <p className="text-slate-500 text-xs font-medium mb-8 uppercase tracking-tight">
-            Se registrará la incidencia como atendida permanentemente.
-          </p>
-          <div className="flex justify-center gap-3">
+          <div className="flex-none flex justify-end items-center px-6 py-4 border-t border-gray-100 bg-gray-50/50 gap-3">
             <ITButton
-              variant="ghost"
-              className="px-8 !text-slate-400 font-black text-[10px] uppercase tracking-widest"
+              variant="outlined"
+              className="border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg font-medium"
               onClick={() => setIncidentToResolveId(null)}
             >
               Cancelar
@@ -294,12 +303,10 @@ const IncidentsPage = () => {
             <ITButton
               variant="filled"
               color="success"
-              className="px-10"
+              className="bg-gray-900 text-white hover:bg-gray-800 rounded-lg font-medium"
               onClick={confirmResolve}
             >
-              <div className="font-black text-[10px] uppercase tracking-widest">
-                Confirmar
-              </div>
+              Confirmar
             </ITButton>
           </div>
         </div>
@@ -310,20 +317,19 @@ const IncidentsPage = () => {
         onClose={() => setIncidentToDelete(null)}
         title="Eliminar Incidencia"
       >
-        <div className="p-10 text-center">
-          <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-rose-100 shadow-sm">
-            <FaTrash size={32} />
+        <div className="flex flex-col bg-white overflow-hidden">
+          <div className="p-6 space-y-2">
+            <ITText className="text-lg font-semibold text-gray-900">
+              ¿Eliminar Reporte?
+            </ITText>
+            <ITText className="text-sm text-slate-500">
+              Esta acción es irreversible. Se perderá toda la evidencia asociada.
+            </ITText>
           </div>
-          <ITText className="text-xl font-black text-slate-800 uppercase tracking-tight mb-3">
-            ¿Eliminar Reporte?
-          </ITText>
-          <ITText className="text-slate-500 text-[11px] font-bold uppercase tracking-widest leading-relaxed mb-10 max-w-xs mx-auto block">
-            Esta acción es irreversible. Se perderá toda la evidencia asociada.
-          </ITText>
-          <div className="flex gap-4 justify-center">
+          <div className="flex-none flex justify-end items-center px-6 py-4 border-t border-gray-100 bg-gray-50/50 gap-3">
             <ITButton
-              variant="ghost"
-              className="px-8 font-black text-[11px] uppercase tracking-widest text-slate-400"
+              variant="outlined"
+              className="border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg font-medium"
               onClick={() => setIncidentToDelete(null)}
             >
               Cancelar
@@ -331,7 +337,7 @@ const IncidentsPage = () => {
             <ITButton
               variant="filled"
               color="danger"
-              className="px-10 !rounded-2xl shadow-xl shadow-rose-200"
+              className="rounded-lg font-medium"
               onClick={confirmDelete}
             >
               ELIMINAR AHORA

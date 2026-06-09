@@ -2,21 +2,21 @@ import { ModuleHeader } from "@app/core/components/ModuleHeader";
 import { useCatalog } from "@app/core/hooks/catalog.hook";
 import { AppState } from "@app/core/store/store";
 import { showToast } from "@app/core/store/toast/toast.slice";
+import { showLoader, hideLoader } from "@app/core/store/loader/loader.slice";
 import {
   ITBadget,
   ITButton,
   ITDataTable,
   ITDialog,
   ITLoader,
+  ITText,
   ITTripleFilter,
 } from "@axzydev/axzy_ui_system";
 import dayjs from "dayjs";
 import { useCallback, useMemo, useState } from "react";
 import {
   FaCheck,
-  FaCheckCircle,
   FaEye,
-  FaTrash,
   FaWrench,
 } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
@@ -69,40 +69,50 @@ const MaintenancesPage = () => {
   const confirmResolve = async () => {
     if (!maintenanceToResolveId) return;
     setResolvingId(maintenanceToResolveId);
-    const res = await resolveMaintenance(maintenanceToResolveId as any);
-    setResolvingId(null);
-    setMaintenanceToResolveId(null);
+    dispatch(showLoader());
+    try {
+      const res = await resolveMaintenance(maintenanceToResolveId as any);
+      setResolvingId(null);
+      setMaintenanceToResolveId(null);
 
-    if (res.success) {
-      setRefreshKey((p) => p + 1);
-      if (viewingMaintenance?.id === (maintenanceToResolveId as any)) {
-        setViewingMaintenance(null);
+      if (res.success) {
+        setRefreshKey((p) => p + 1);
+        if (viewingMaintenance?.id === (maintenanceToResolveId as any)) {
+          setViewingMaintenance(null);
+        }
+        dispatch(
+          showToast({ message: "Mantenimiento resuelto", type: "success" }),
+        );
+      } else {
+        dispatch(
+          showToast({
+            message: "Error al resolver mantenimiento",
+            type: "error",
+          }),
+        );
       }
-      dispatch(
-        showToast({ message: "Mantenimiento resuelto", type: "success" }),
-      );
-    } else {
-      dispatch(
-        showToast({
-          message: "Error al resolver mantenimiento",
-          type: "error",
-        }),
-      );
+    } finally {
+      dispatch(hideLoader());
     }
   };
 
   const confirmDelete = async () => {
     if (!maintenanceToDelete) return;
     setDeletingId(maintenanceToDelete.id as any);
-    const res = await deleteMaintenance(maintenanceToDelete.id);
-    setDeletingId(null);
-    setMaintenanceToDelete(null);
+    dispatch(showLoader());
+    try {
+      const res = await deleteMaintenance(maintenanceToDelete.id);
+      setDeletingId(null);
+      setMaintenanceToDelete(null);
 
-    if (res.success) {
-      dispatch(showToast({ message: "Registro eliminado", type: "success" }));
-      setRefreshKey((p) => p + 1);
-    } else {
-      dispatch(showToast({ message: "Error al eliminar", type: "error" }));
+      if (res.success) {
+        dispatch(showToast({ message: "Registro eliminado", type: "success" }));
+        setRefreshKey((p) => p + 1);
+      } else {
+        dispatch(showToast({ message: "Error al eliminar", type: "error" }));
+      }
+    } finally {
+      dispatch(hideLoader());
     }
   };
 
@@ -263,21 +273,20 @@ const MaintenancesPage = () => {
         onClose={() => setMaintenanceToResolveId(null)}
         title="Confirmar Resolución"
       >
-        <div className="p-10 text-center">
-          <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-emerald-100 shadow-sm">
-            <FaCheckCircle size={40} />
+        <div className="flex flex-col bg-white overflow-hidden">
+          <div className="p-6 space-y-2">
+            <ITText className="text-lg font-semibold text-gray-900">
+              ¿Confirmar Resolución?
+            </ITText>
+            <ITText className="text-sm text-slate-500">
+              El estatus cambiará a "Atendido" y quedará registrado bajo su
+              perfil.
+            </ITText>
           </div>
-          <h4 className="text-xl font-black text-slate-800 uppercase tracking-tight mb-3">
-            ¿Confirmar Resolución?
-          </h4>
-          <p className="text-slate-500 text-[11px] font-bold uppercase tracking-widest leading-relaxed mb-10 max-w-xs mx-auto">
-            El estatus cambiará a "Atendido" y quedará registrado bajo su
-            perfil.
-          </p>
-          <div className="flex gap-4 justify-center">
+          <div className="flex-none flex justify-end items-center px-6 py-4 border-t border-gray-100 bg-gray-50/50 gap-3">
             <ITButton
-              variant="ghost"
-              className="px-8 font-black text-[11px] uppercase tracking-widest text-slate-400"
+              variant="outlined"
+              className="border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg font-medium"
               onClick={() => setMaintenanceToResolveId(null)}
             >
               Cancelar
@@ -285,7 +294,7 @@ const MaintenancesPage = () => {
             <ITButton
               variant="filled"
               color="success"
-              className="px-10 !rounded-2xl shadow-xl shadow-emerald-200"
+              className="bg-gray-900 text-white hover:bg-gray-800 rounded-lg font-medium"
               onClick={confirmResolve}
               disabled={!!resolvingId}
             >
@@ -299,21 +308,20 @@ const MaintenancesPage = () => {
         onClose={() => setMaintenanceToDelete(null)}
         title="Eliminar Registro"
       >
-        <div className="p-10 text-center">
-          <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-rose-100 shadow-sm">
-            <FaTrash size={32} />
+        <div className="flex flex-col bg-white overflow-hidden">
+          <div className="p-6 space-y-2">
+            <ITText className="text-lg font-semibold text-gray-900">
+              ¿Eliminar Reporte?
+            </ITText>
+            <ITText className="text-sm text-slate-500">
+              Esta acción es definitiva y borrará toda la evidencia asociada al
+              registro #{maintenanceToDelete?.id.toString().slice(0, 8)}.
+            </ITText>
           </div>
-          <h4 className="text-xl font-black text-slate-800 uppercase tracking-tight mb-3">
-            ¿Eliminar Reporte?
-          </h4>
-          <p className="text-slate-500 text-[11px] font-bold uppercase tracking-widest leading-relaxed mb-10 max-w-xs mx-auto">
-            Esta acción es definitiva y borrará toda la evidencia asociada al
-            registro #{maintenanceToDelete?.id.toString().slice(0, 8)}.
-          </p>
-          <div className="flex gap-4 justify-center">
+          <div className="flex-none flex justify-end items-center px-6 py-4 border-t border-gray-100 bg-gray-50/50 gap-3">
             <ITButton
-              variant="ghost"
-              className="px-8 font-black text-[11px] uppercase tracking-widest text-slate-400"
+              variant="outlined"
+              className="border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg font-medium"
               onClick={() => setMaintenanceToDelete(null)}
             >
               Cancelar
@@ -321,7 +329,7 @@ const MaintenancesPage = () => {
             <ITButton
               variant="filled"
               color="danger"
-              className="px-10 !rounded-2xl shadow-xl shadow-rose-200"
+              className="rounded-lg font-medium"
               onClick={confirmDelete}
               disabled={!!deletingId}
             >

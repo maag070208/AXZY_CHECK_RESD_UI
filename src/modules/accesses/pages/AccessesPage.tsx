@@ -1,4 +1,5 @@
 import { ModuleHeader } from "@app/core/components/ModuleHeader";
+import { showLoader, hideLoader } from "@app/core/store/loader/loader.slice";
 import { showToast } from "@app/core/store/toast/toast.slice";
 import {
   ITBadget,
@@ -8,10 +9,11 @@ import {
   ITDialog,
   ITInput,
   ITText,
+  ITTripleFilter,
 } from "@axzydev/axzy_ui_system";
 import dayjs from "dayjs";
 import QRCode from "qrcode";
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState, useEffect, useMemo } from "react";
 import {
   FaCheck,
   FaKey,
@@ -40,6 +42,7 @@ const AccessesPage = () => {
   const [isQuickAccessOpen, setIsQuickAccessOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   useEffect(() => {
     if (isResident) {
@@ -53,6 +56,26 @@ const AccessesPage = () => {
       setMyResident(res.data);
     }
   };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setRefreshKey((prev) => prev + 1);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    setRefreshKey((prev) => prev + 1);
+  }, [statusFilter]);
+
+  const externalFilters = useMemo(() => {
+    const filters: Record<string, string | number | boolean> = {};
+    if (searchTerm) filters.search = searchTerm;
+    if (statusFilter !== "all") {
+      filters.status = statusFilter;
+    }
+    return filters;
+  }, [searchTerm, statusFilter]);
 
   // Modal for viewing QR code pass details
   const [selectedAccess, setSelectedAccess] = useState<AccessResponse | null>(null);
@@ -101,6 +124,7 @@ const AccessesPage = () => {
   const confirmValidateEntry = async () => {
     if (!accessToValidate || isProcessingAction) return;
     setIsProcessingAction(true);
+    dispatch(showLoader());
     try {
       const res = await updateAccess(accessToValidate.id, {
         status: "ACTIVE",
@@ -122,6 +146,7 @@ const AccessesPage = () => {
       );
     } finally {
       setIsProcessingAction(false);
+      dispatch(hideLoader());
     }
   };
 
@@ -137,6 +162,7 @@ const AccessesPage = () => {
       return;
     }
     setIsProcessingAction(true);
+    dispatch(showLoader());
     try {
       const res = await updateAccess(accessToReject.id, {
         status: "REJECTED",
@@ -154,12 +180,14 @@ const AccessesPage = () => {
       dispatch(showToast({ message: "Error al rechazar pase", type: "error" }));
     } finally {
       setIsProcessingAction(false);
+      dispatch(hideLoader());
     }
   };
 
   const confirmRegisterExit = async () => {
     if (!accessToExit || isProcessingAction) return;
     setIsProcessingAction(true);
+    dispatch(showLoader());
     try {
       const res = await updateAccess(accessToExit.id, {
         status: "FINISHED",
@@ -180,21 +208,19 @@ const AccessesPage = () => {
       );
     } finally {
       setIsProcessingAction(false);
+      dispatch(hideLoader());
     }
   };
 
   const memoizedFetch = useCallback(
     async (params: ITDataTableFetchParams): Promise<any> => {
-      const filters: Record<string, string | number | boolean> = {};
-      if (searchTerm) filters.search = searchTerm;
-
       const res = await getPaginatedAccesses({
         ...params,
-        filters: { ...params.filters, ...filters },
+        filters: { ...params.filters, ...externalFilters },
       });
       return { data: res.data, total: res.total };
     },
-    [searchTerm],
+    [externalFilters],
   );
 
   const refreshTable = () => setRefreshKey((prev) => prev + 1);
@@ -223,6 +249,7 @@ const AccessesPage = () => {
   const confirmDelete = async () => {
     if (!accessToDeleteId || isDeleting) return;
     setIsDeleting(true);
+    dispatch(showLoader());
     try {
       const res = await deleteAccess(accessToDeleteId);
       if (res.success) {
@@ -241,6 +268,7 @@ const AccessesPage = () => {
       );
     } finally {
       setIsDeleting(false);
+      dispatch(hideLoader());
     }
   };
 
@@ -293,15 +321,27 @@ const AccessesPage = () => {
         onRefresh={refreshTable}
         refreshKey={refreshKey}
         extraFilter={
-          isResident ? (
-            <ITButton
-              variant="filled"
-              onClick={() => setIsQuickAccessOpen(true)}
-              className="!rounded-xl shadow-sm bg-indigo-500 !text-white hover:bg-indigo-600"
-            >
-              Generar Pase QR
-            </ITButton>
-          ) : undefined
+          <div className="flex items-center gap-3">
+            <ITTripleFilter
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={[
+                { label: "TODOS", value: "all" },
+                { label: "VÁLIDOS", value: "PENDING" },
+                { label: "ACTIVOS", value: "ACTIVE" },
+                { label: "COMPLETADOS", value: "FINISHED" },
+              ]}
+            />
+            {isResident && (
+              <ITButton
+                variant="filled"
+                onClick={() => setIsQuickAccessOpen(true)}
+                className="!rounded-xl shadow-sm bg-indigo-500 !text-white hover:bg-indigo-600"
+              >
+                Generar Pase QR
+              </ITButton>
+            )}
+          </div>
         }
       />
 

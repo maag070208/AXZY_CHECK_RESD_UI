@@ -1,5 +1,6 @@
 import { ModuleHeader } from "@app/core/components/ModuleHeader";
 import { showToast } from "@app/core/store/toast/toast.slice";
+import { showLoader, hideLoader } from "@app/core/store/loader/loader.slice";
 import {
   ITBadget,
   ITButton,
@@ -75,6 +76,7 @@ const PropertiesPage = () => {
   };
 
   const handleCreateOrUpdate = async (data: any, keepOpen?: boolean) => {
+    dispatch(showLoader());
     try {
       let res;
       if (editingHouse) {
@@ -105,12 +107,15 @@ const PropertiesPage = () => {
       }
     } catch (error) {
       dispatch(showToast({ message: "Error inesperado", type: "error" }));
+    } finally {
+      dispatch(hideLoader());
     }
   };
 
   const confirmDelete = async () => {
     if (!propertyToDeleteId || isDeleting) return;
     setIsDeleting(true);
+    dispatch(showLoader());
     try {
       const res = await deleteHouse(propertyToDeleteId);
       if (res.success) {
@@ -122,6 +127,7 @@ const PropertiesPage = () => {
       dispatch(showToast({ message: "Error al eliminar propiedad", type: "error" }));
     } finally {
       setIsDeleting(false);
+      dispatch(hideLoader());
     }
   };
 

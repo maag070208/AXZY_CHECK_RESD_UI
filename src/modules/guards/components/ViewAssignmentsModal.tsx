@@ -3,8 +3,9 @@ import {
   ITButton,
   ITDialog,
   ITLoader,
+  useITTheme,
 } from "@axzydev/axzy_ui_system";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   FaArrowLeft,
   FaCalendarAlt,
@@ -26,9 +27,9 @@ import { Assignment, AssignmentStatus } from "../types/guards.types";
 import dayjs from "dayjs";
 import { ITMediaGrid } from "@app/core/components/ITMediaGrid";
 import { UserResponse } from "../../users/services/UserService";
+import { buildShades, colorHex } from "../../home/utils/theme.utils";
 
-// Fallback for API Base URL if constant is missing
-const API_BASE_URL = "http://localhost:4444";
+const API_ORIGIN = (import.meta.env.VITE_BASE_URL as string)?.replace(/\/api\/v\d*$/, "") || "http://localhost:4444";
 
 interface MediaItem {
   id: string | number;
@@ -78,6 +79,10 @@ export const ViewAssignmentsModal = ({
   const [approvingId, setApprovingId] = useState<number | null>(null);
   const [selectedAssignment, setSelectedAssignment] =
     useState<Assignment | null>(null);
+
+  const { palette } = useITTheme();
+  const primaryShades = useMemo(() => buildShades(colorHex(palette, "primary")), [palette]);
+  const warningShades = useMemo(() => buildShades(colorHex(palette, "warning")), [palette]);
 
   const fetchAssignments = async () => {
     setLoading(true);
@@ -133,16 +138,16 @@ export const ViewAssignmentsModal = ({
       title="Expediente de Asignaciones"
       className="!max-w-6xl !w-full"
     >
-      <div className="flex flex-col h-[85vh]  ">
+      <div className="flex flex-col h-[85vh]">
         {/* Profile Header */}
-        <div className="flex-none p-8 bg-white border-b border-slate-100">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="flex items-center gap-5">
-              <div className="w-20 h-20 rounded-3xl bg-slate-50 border border-slate-100 flex items-center justify-center text-2xl font-black text-slate-400 shadow-sm">
+        <div className="flex-none p-5 bg-white border-b border-slate-100">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-lg font-black text-slate-400 shadow-sm">
                 {guardName.charAt(0)}
               </div>
-              <div className="space-y-1">
-                <h3 className="text-2xl font-black text-slate-800 uppercase tracking-tight">
+              <div className="space-y-0.5">
+                <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">
                   {guardName}
                 </h3>
                 <div className="flex flex-wrap items-center gap-3">
@@ -181,7 +186,7 @@ export const ViewAssignmentsModal = ({
         </div>
 
         {/* Dynamic Content */}
-        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
           {loading && !selectedAssignment && !assignments.length ? (
             <div className="h-full flex flex-col items-center justify-center space-y-4">
               <ITLoader />
@@ -192,19 +197,19 @@ export const ViewAssignmentsModal = ({
           ) : selectedAssignment ? (
             /* DETAIL VIEW - 8/4 Layout */
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="flex items-center gap-4 mb-8">
+              <div className="flex items-center gap-4 mb-6">
                 <ITButton
                   onClick={() => setSelectedAssignment(null)}
                   variant="icon-only"
                   color="gray"
-                  className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 hover:text-emerald-500 hover:border-emerald-100 transition-all shadow-sm"
+                  className="w-8 h-8 rounded-lg bg-white border border-slate-100 flex items-center justify-center text-slate-400 transition-all shadow-sm"
                 >
-                  <FaArrowLeft size={14} />
+                  <FaArrowLeft size={12} />
                 </ITButton>
                 <div>
                   <div className="flex items-center gap-3">
-                    <h4 className="text-xl font-black text-slate-800 uppercase tracking-tight">
-                      Reporte de Ubicación
+                    <h4 className="text-lg font-black text-slate-800 uppercase tracking-tight">
+                      Reporte de Ubicacion
                     </h4>
                     <ITBadget
                       color={getStatusColor(selectedAssignment.status)}
@@ -221,11 +226,9 @@ export const ViewAssignmentsModal = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* Left Column (8): Evidence and Checklist */}
-                <div className="lg:col-span-8 space-y-8">
-                  {/* Evidence Card */}
-                  <div className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-sm space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div className="lg:col-span-8 space-y-6">
+                  <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-5">
                     <div className="flex items-center justify-between">
                       <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
                         <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />{" "}
@@ -243,12 +246,12 @@ export const ViewAssignmentsModal = ({
                             type: m.type || "IMAGE",
                             url: m.url.startsWith("http")
                               ? m.url
-                              : `${API_BASE_URL}${m.url.replace("/api/v1", "")}`,
+                              : `${API_ORIGIN}${m.url.replace("/api/v1", "")}`,
                           }))}
                         gridSize={280}
                       />
                     ) : (
-                      <div className="py-20 bg-slate-50/50 rounded-[24px] border-2 border-dashed border-slate-100 flex flex-col items-center justify-center text-center">
+                      <div className="py-12 bg-slate-50/50 rounded-xl border-2 border-dashed border-slate-100 flex flex-col items-center justify-center text-center">
                         <FaFileAlt className="text-slate-200 text-4xl mb-4" />
                         <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
                           Sin registros visuales
@@ -258,9 +261,12 @@ export const ViewAssignmentsModal = ({
                   </div>
 
                   {/* Checklist Card */}
-                  <div className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-sm space-y-6">
+                  <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-5">
                     <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{" "}
+                      <div
+                        className="w-1.5 h-1.5 rounded-full"
+                        style={{ backgroundColor: primaryShades[500] }}
+                      />{" "}
                       Consignas Operativas
                     </h5>
 
@@ -268,31 +274,45 @@ export const ViewAssignmentsModal = ({
                       {selectedAssignment.tasks.map((task) => (
                         <div
                           key={task.id}
-                          className={`flex items-center justify-between p-5 rounded-2xl border transition-all ${
-                            task.completed
-                              ? "bg-emerald-50/30 border-emerald-100"
-                              : "bg-slate-50/30 border-slate-100"
-                          }`}
+                          className="flex items-center justify-between p-4 rounded-xl border transition-all"
+                          style={{
+                            backgroundColor: task.completed
+                              ? `${primaryShades[50]}4d`
+                              : "",
+                            borderColor: task.completed
+                              ? primaryShades[100]
+                              : "",
+                          }}
                         >
                           <div className="flex items-center gap-4">
                             <div
-                              className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs shadow-sm transition-all ${
-                                task.completed
-                                  ? "bg-emerald-500 text-white"
-                                  : "bg-white text-slate-200 border border-slate-100"
-                              }`}
+                              className="w-6 h-6 rounded-lg flex items-center justify-center text-xs shadow-sm transition-all"
+                              style={{
+                                backgroundColor: task.completed
+                                  ? primaryShades[500]
+                                  : "",
+                                color: task.completed ? "#fff" : "",
+                              }}
                             >
                               <FaCheckCircle />
                             </div>
                             <span
-                              className={`text-[11px] font-black uppercase tracking-tight ${task.completed ? "text-emerald-700" : "text-slate-600"}`}
+                              className={`text-[11px] font-black uppercase tracking-tight`}
+                              style={{
+                                color: task.completed
+                                  ? primaryShades[700]
+                                  : "",
+                              }}
                             >
                               {task.description}
                             </span>
                           </div>
                           {task.completed && (
                             <div className="text-right">
-                              <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">
+                              <p
+                                className="text-[9px] font-black uppercase tracking-widest"
+                                style={{ color: primaryShades[500] }}
+                              >
                                 Completada
                               </p>
                               <p className="text-[9px] font-bold text-slate-400">
@@ -305,11 +325,15 @@ export const ViewAssignmentsModal = ({
                     </div>
 
                     {selectedAssignment.notes && (
-                      <div className="mt-8 pt-8 border-t border-slate-50">
+                      <div className="mt-6 pt-6 border-t border-slate-50">
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">
                           Observaciones del Guardia
                         </p>
-                        <div className="bg-amber-50/50 p-6 rounded-2xl border border-amber-100/50">
+                        <div className="p-6 rounded-2xl border"
+                          style={{
+                            backgroundColor: `${warningShades[50]}80`,
+                            borderColor: `${warningShades[100]}80`,
+                          }}>
                           <p className="text-xs text-slate-600 font-bold italic leading-relaxed">
                             "{selectedAssignment.notes}"
                           </p>
@@ -320,15 +344,15 @@ export const ViewAssignmentsModal = ({
                 </div>
 
                 {/* Right Column (4): Info and Status */}
-                <div className="lg:col-span-4 space-y-6">
-                  <div className="bg-white rounded-[32px] p-8 border border-slate-100 shadow-sm sticky top-8">
-                    <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-8">
-                      Información General
+                <div className="lg:col-span-4 space-y-5">
+                  <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm sticky top-6">
+                    <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6">
+                      Informacion General
                     </h5>
 
-                    <div className="space-y-8">
+                    <div className="space-y-6">
                       <DetailItem
-                        icon={<FaMapMarkerAlt className="text-emerald-500" />}
+                        icon={<FaMapMarkerAlt style={{ color: primaryShades[500] }} />}
                         label="Ubicación"
                         value={selectedAssignment.location?.name}
                         subValue={`Zona ${selectedAssignment.location?.aisle || "N/A"}`}
@@ -344,7 +368,7 @@ export const ViewAssignmentsModal = ({
                         )}
                       />
                       <DetailItem
-                        icon={<FaLayerGroup className="text-amber-500" />}
+                        icon={<FaLayerGroup style={{ color: warningShades[500] }} />}
                         label="Prioridad"
                         value="Especial"
                         subValue="Asignación Directa"
@@ -354,11 +378,11 @@ export const ViewAssignmentsModal = ({
                     {selectedAssignment.status ===
                       AssignmentStatus.UNDER_REVIEW &&
                       !isClient && (
-                        <div className="mt-12">
+                        <div className="mt-8">
                           <ITButton
                             onClick={() => handleApprove(selectedAssignment.id)}
                             disabled={approvingId === selectedAssignment.id}
-                            className="w-full !h-14 !rounded-2xl shadow-xl shadow-emerald-100"
+                            className="w-full !h-12 !rounded-xl shadow-lg"
                           >
                             <div className="flex items-center gap-3 font-black text-[10px] uppercase tracking-widest">
                               {approvingId === selectedAssignment.id ? (
@@ -378,19 +402,25 @@ export const ViewAssignmentsModal = ({
             </div>
           ) : assignments.length > 0 ? (
             /* LIST VIEW */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in zoom-in-95 duration-500">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in zoom-in-95 duration-500">
               {assignments.map((assignment) => (
                 <div
                   key={assignment.id}
                   onClick={() => setSelectedAssignment(assignment)}
-                  className="group bg-white rounded-[32px] border border-slate-100 p-8 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all cursor-pointer relative overflow-hidden"
+                  className="group bg-white rounded-2xl border border-slate-100 p-6 shadow-sm hover:shadow-lg hover:shadow-slate-200/50 transition-all cursor-pointer relative overflow-hidden"
                 >
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50/30 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150 duration-700" />
+                  <div
+                    className="absolute top-0 right-0 w-24 h-24 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150 duration-700"
+                    style={{ backgroundColor: `${primaryShades[50]}4d` }}
+                  />
 
-                  <div className="relative space-y-6">
+                  <div className="relative space-y-5">
                     <div className="flex justify-between items-start">
-                      <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-emerald-500 group-hover:text-white group-hover:border-emerald-400 transition-all duration-300">
-                        <FaMapMarkerAlt size={20} />
+                      <div
+                        className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 transition-all duration-300"
+                        style={{}}
+                      >
+                        <FaMapMarkerAlt size={16} />
                       </div>
                       <ITBadget
                         color={getStatusColor(assignment.status)}
@@ -402,7 +432,7 @@ export const ViewAssignmentsModal = ({
                     </div>
 
                     <div>
-                      <h5 className="text-sm font-black text-slate-800 uppercase tracking-tight group-hover:text-emerald-600 transition-colors">
+                      <h5 className="text-sm font-black text-slate-800 uppercase tracking-tight transition-colors">
                         {assignment.location?.name || "Sin Ubicación"}
                       </h5>
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
@@ -416,7 +446,11 @@ export const ViewAssignmentsModal = ({
                           {assignment.tasks.slice(0, 3).map((_, i) => (
                             <div
                               key={i}
-                              className="w-6 h-6 rounded-full bg-emerald-100 border-2 border-white flex items-center justify-center text-emerald-600"
+                              className="w-6 h-6 rounded-full border-2 border-white flex items-center justify-center"
+                              style={{
+                                backgroundColor: primaryShades[100],
+                                color: primaryShades[600],
+                              }}
                             >
                               <FaCheckCircle size={10} />
                             </div>
@@ -427,8 +461,8 @@ export const ViewAssignmentsModal = ({
                         </span>
                       </div>
                       <FaChevronRight
-                        size={12}
-                        className="text-slate-300 group-hover:text-emerald-500 group-hover:translate-x-1 transition-all"
+                        size={10}
+                        className="text-slate-300 group-hover:translate-x-1 transition-all"
                       />
                     </div>
                   </div>
@@ -436,12 +470,12 @@ export const ViewAssignmentsModal = ({
               ))}
             </div>
           ) : (
-            <div className="h-full flex flex-col items-center justify-center text-center space-y-6">
-              <div className="w-24 h-24 rounded-[40px] bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-200">
-                <FaExclamationTriangle size={40} />
+            <div className="h-full flex flex-col items-center justify-center text-center space-y-4">
+              <div className="w-16 h-16 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-200">
+                <FaExclamationTriangle size={28} />
               </div>
-              <div className="space-y-2">
-                <h5 className="text-xl font-black text-slate-800 uppercase tracking-tight">
+              <div className="space-y-1.5">
+                <h5 className="text-lg font-black text-slate-800 uppercase tracking-tight">
                   Sin Historial
                 </h5>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] max-w-xs">
@@ -454,7 +488,7 @@ export const ViewAssignmentsModal = ({
         </div>
 
         {/* Standardized Footer */}
-        <div className="flex-none flex justify-end items-center px-10 py-6 border-t border-slate-100 bg-slate-50/50 gap-4">
+        <div className="flex-none flex justify-end items-center px-6 py-4 border-t border-slate-100 bg-slate-50/50 gap-4">
           <ITButton
             variant="filled"
             color="secondary"
@@ -477,8 +511,8 @@ interface DetailItemProps {
 }
 
 const DetailItem = ({ icon, label, value, subValue }: DetailItemProps) => (
-  <div className="flex items-start gap-4">
-    <div className="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shadow-sm">
+  <div className="flex items-start gap-3">
+    <div className="w-8 h-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shadow-sm">
       {icon}
     </div>
     <div>

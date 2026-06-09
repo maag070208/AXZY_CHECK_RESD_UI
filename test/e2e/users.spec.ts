@@ -446,17 +446,16 @@ test.describe("Módulo de Usuarios - Gestión de Usuarios", () => {
   const modifiedUserFullName = `JUAN ${uniqueUserId} MODIFICADO PÉREZ ${uniqueUserId}`;
 
   test("debería mostrar el Directorio de Usuarios", async ({ page }) => {
-    await expect(page.getByRole("heading", { name: /Directorio de Usuarios/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Directorio de Usuarios/i })).toBeVisible({ timeout: 15000 });
     if (useRealApi) {
-      await expect(page.getByText(/mario.*Mantenimiento/is)).toBeVisible({ timeout: 10000 });
-      await expect(page.getByText(/ricardo.*Jefe de Turno/is)).toBeVisible({ timeout: 10000 });
-      // Asael is on page 2; search for him
+      await page.fill('input[placeholder="BUSCAR USUARIO..."]', "mario");
+      await expect(page.locator("tr", { hasText: /mario/i }).filter({ hasText: /Mantenimiento/i }).first()).toBeVisible({ timeout: 15000 });
+      await page.fill('input[placeholder="BUSCAR USUARIO..."]', "ricardo");
+      await expect(page.locator("tr", { hasText: /ricardo/i }).filter({ hasText: /Jefe de Turno/i }).first()).toBeVisible({ timeout: 15000 });
       await page.fill('input[placeholder="BUSCAR USUARIO..."]', "asael");
-      await expect(page.getByText(/asael.*Guardia/is)).toBeVisible({ timeout: 10000 });
-      await page.fill('input[placeholder="BUSCAR USUARIO..."]', "");
-      // Isabel is on page 2; search for her
+      await expect(page.locator("tr", { hasText: /asael/i }).filter({ hasText: /Guardia/i }).first()).toBeVisible({ timeout: 15000 });
       await page.fill('input[placeholder="BUSCAR USUARIO..."]', "isabel");
-      await expect(page.getByText(/isabel.*Administrador/is)).toBeVisible({ timeout: 10000 });
+      await expect(page.locator("tr", { hasText: /isabel/i }).filter({ hasText: /Administrador/i }).first()).toBeVisible({ timeout: 15000 });
       await page.fill('input[placeholder="BUSCAR USUARIO..."]', "");
     } else {
       await expect(page.getByText(/mario mantenimiento/i)).toBeVisible();

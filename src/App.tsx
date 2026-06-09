@@ -6,7 +6,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { Navigate, Route, Routes } from "react-router-dom";
 import "./App.css";
 import { PrivateRoutes } from "./core/routes/PrivateRoutes";
+import { ProtectedRoute } from "./core/routes/ProtectedRoute";
 import { setAuth } from "./core/store/auth/auth.slice";
+import { ROLES_ADMIN, ROLES_ADMIN_SHIFT, ROLES_ADMIN_SHIFT_RESDN } from "./core/constants/roles.constants";
 import HomePage from "./modules/home/pages/HomePage";
 
 import LocationsPage from "./modules/locations/pages/LocationsPage";
@@ -73,48 +75,42 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route element={<PrivateRoutes />}>
           <Route path="/home" element={<HomePage />} />
-          <Route path="/guards" element={<GuardsPage />} />
 
-          <Route path="/locations" element={<LocationsPage />} />
-          <Route path="/residents" element={<ResidentsPage />} />
-          <Route path="/residents/:id" element={<ResidentDetailPage />} />
-          <Route path="/properties" element={<PropertiesPage />} />
-          <Route path="/accesses" element={<AccessesPage />} />
-          <Route path="/routes" element={<RoutesPage />} />
-          <Route path="/routes/new" element={<CreateRoutePage />} />
-          <Route path="/routes/edit/:id" element={<CreateRoutePage />} />
-          <Route path="/payments" element={<PaymentsPage />} />
-          <Route path="/payments/receipt/:id" element={<PaymentReceiptPage />} />
-          <Route path="/fees" element={<FeesPage />} />
-          <Route path="/users" element={<UsersPage />} />
-          <Route path="/incidents" element={<IncidentsPage />} />
-          <Route path="/complaints" element={<ComplaintsPage />} />
-          <Route path="/contacts" element={<ContactsPage />} />
-          <Route path="/maintenances" element={<MaintenancesPage />} />
-          <Route path="/kardex" element={<KardexPage />} />
-          <Route path="/schedules" element={<SchedulesPage />} />
-
-          <Route path="/rounds" element={<RoundsPage />} />
-          <Route path="/rounds/:id" element={<RoundDetailPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/reports" element={<ReportsPage />} />
+          <Route path="/guards" element={<ProtectedRoute allowedRoles={[...ROLES_ADMIN_SHIFT_RESDN]}><GuardsPage /></ProtectedRoute>} />
+          <Route path="/locations" element={<ProtectedRoute allowedRoles={[...ROLES_ADMIN_SHIFT]}><LocationsPage /></ProtectedRoute>} />
+          <Route path="/residents" element={<ProtectedRoute allowedRoles={[...ROLES_ADMIN]}><ResidentsPage /></ProtectedRoute>} />
+          <Route path="/residents/:id" element={<ProtectedRoute allowedRoles={[...ROLES_ADMIN]}><ResidentDetailPage /></ProtectedRoute>} />
+          <Route path="/properties" element={<ProtectedRoute allowedRoles={[...ROLES_ADMIN]}><PropertiesPage /></ProtectedRoute>} />
+          <Route path="/accesses" element={<ProtectedRoute allowedRoles={[...ROLES_ADMIN_SHIFT_RESDN]}><AccessesPage /></ProtectedRoute>} />
+          <Route path="/routes" element={<ProtectedRoute allowedRoles={[...ROLES_ADMIN_SHIFT]}><RoutesPage /></ProtectedRoute>} />
+          <Route path="/routes/new" element={<ProtectedRoute allowedRoles={[...ROLES_ADMIN_SHIFT]}><CreateRoutePage /></ProtectedRoute>} />
+          <Route path="/routes/edit/:id" element={<ProtectedRoute allowedRoles={[...ROLES_ADMIN_SHIFT]}><CreateRoutePage /></ProtectedRoute>} />
+          <Route path="/payments" element={<ProtectedRoute allowedRoles={[...ROLES_ADMIN_SHIFT_RESDN]}><PaymentsPage /></ProtectedRoute>} />
+          <Route path="/payments/receipt/:id" element={<ProtectedRoute allowedRoles={[...ROLES_ADMIN_SHIFT_RESDN]}><PaymentReceiptPage /></ProtectedRoute>} />
+          <Route path="/fees" element={<ProtectedRoute allowedRoles={[...ROLES_ADMIN]}><FeesPage /></ProtectedRoute>} />
+          <Route path="/users" element={<ProtectedRoute allowedRoles={[...ROLES_ADMIN]}><UsersPage /></ProtectedRoute>} />
+          <Route path="/incidents" element={<ProtectedRoute allowedRoles={[...ROLES_ADMIN_SHIFT]}><IncidentsPage /></ProtectedRoute>} />
+          <Route path="/complaints" element={<ProtectedRoute allowedRoles={['RESDN', ...ROLES_ADMIN]}><ComplaintsPage /></ProtectedRoute>} />
+          <Route path="/contacts" element={<ProtectedRoute allowedRoles={['RESDN']}><ContactsPage /></ProtectedRoute>} />
+          <Route path="/maintenances" element={<ProtectedRoute allowedRoles={[...ROLES_ADMIN_SHIFT]}><MaintenancesPage /></ProtectedRoute>} />
+          <Route path="/kardex" element={<ProtectedRoute allowedRoles={[...ROLES_ADMIN_SHIFT]}><KardexPage /></ProtectedRoute>} />
+          <Route path="/schedules" element={<ProtectedRoute allowedRoles={[...ROLES_ADMIN]}><SchedulesPage /></ProtectedRoute>} />
+          <Route path="/rounds" element={<ProtectedRoute allowedRoles={[...ROLES_ADMIN_SHIFT]}><RoundsPage /></ProtectedRoute>} />
+          <Route path="/rounds/:id" element={<ProtectedRoute allowedRoles={[...ROLES_ADMIN_SHIFT]}><RoundDetailPage /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute allowedRoles={[...ROLES_ADMIN]}><SettingsPage /></ProtectedRoute>} />
+          <Route path="/reports" element={<ProtectedRoute allowedRoles={[...ROLES_ADMIN]}><ReportsPage /></ProtectedRoute>} />
 
         </Route>
         <Route path="*" element={<Navigate to="/home" />} />
       </Routes>
 
       {loading && (
-        <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-slate-900/20 backdrop-blur-[2px] transition-all">
-          <div className="bg-white p-10 rounded-[32px] shadow-2xl border border-slate-100 flex flex-col items-center gap-6">
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-slate-900/20 backdrop-blur-[2px]">
+          <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 flex flex-col items-center gap-4">
             <ITLoader size="lg" />
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-[11px] font-black text-slate-800 uppercase tracking-[0.2em]">
-                Procesando
-              </span>
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-                Por favor espere...
-              </span>
-            </div>
+            <span className="text-xs font-semibold text-slate-500">
+              Procesando...
+            </span>
           </div>
         </div>
       )}

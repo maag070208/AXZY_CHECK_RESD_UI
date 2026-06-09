@@ -1,17 +1,22 @@
 import Logo from "@assets/logo.png";
 import { IAuthRegister } from "@core/types/auth.types";
 import { ITCard } from "@axzydev/axzy_ui_system";
+import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import RegisterForm from "../components/RegisterForm";
 import { register } from "../services/AuthService";
+import { showLoader, hideLoader } from "@app/core/store/loader/loader.slice";
 import { showToast } from "@app/core/store/toast/toast.slice";
 
 const RegisterPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (values: IAuthRegister) => {
+    setLoading(true);
+    dispatch(showLoader());
     try {
       const response = await register(values);
 
@@ -34,6 +39,9 @@ const RegisterPage = () => {
           position: "top-right",
         }),
       );
+    } finally {
+      setLoading(false);
+      dispatch(hideLoader());
     }
   };
 
@@ -62,7 +70,7 @@ const RegisterPage = () => {
           contentClassName="p-8 sm:p-10"
         >
           <div className="flex flex-col space-y-6">
-            <RegisterForm onSubmit={handleSubmit} />
+            <RegisterForm onSubmit={handleSubmit} loading={loading} />
 
             <div className="text-center text-xs text-slate-400 font-medium">
               ¿Ya tienes cuenta?{" "}

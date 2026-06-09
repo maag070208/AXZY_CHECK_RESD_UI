@@ -1,3 +1,4 @@
+import { showLoader, hideLoader } from "@app/core/store/loader/loader.slice";
 import { showToast } from "@app/core/store/toast/toast.slice";
 import {
   getPaginatedResidents,
@@ -88,6 +89,7 @@ export const PaymentFormDialog: React.FC<Props> = ({
     }),
     onSubmit: async (values) => {
       setSubmitting(true);
+      dispatch(showLoader());
       try {
         const payload: CreatePaymentDTO = {
           residentId: values.residentId,
@@ -122,6 +124,7 @@ export const PaymentFormDialog: React.FC<Props> = ({
         dispatch(showToast({ message: "Error en el servidor", type: "error" }));
       } finally {
         setSubmitting(false);
+        dispatch(hideLoader());
       }
     },
   });

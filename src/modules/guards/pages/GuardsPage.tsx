@@ -1,5 +1,6 @@
 import { ModuleHeader } from "@app/core/components/ModuleHeader";
 import { AppState } from "@app/core/store/store";
+import { hideLoader, showLoader } from "@app/core/store/loader/loader.slice";
 import { showToast } from "@app/core/store/toast/toast.slice";
 import {
   ITBadget,
@@ -10,6 +11,7 @@ import {
   ITSelect,
   ITText,
   ITTripleFilter,
+  useITTheme,
 } from "@axzydev/axzy_ui_system";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -28,6 +30,7 @@ import {
 } from "../../users/services/UserService";
 import { AssignmentModal } from "../components/AssignmentModal";
 import { ViewAssignmentsModal } from "../components/ViewAssignmentsModal";
+import { buildShades, colorHex } from "../../home/utils/theme.utils";
 
 const GuardsPage = () => {
   const dispatch = useDispatch();
@@ -48,6 +51,11 @@ const GuardsPage = () => {
 
   const [schedules, setSchedules] = useState<any[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
+
+  const { palette } = useITTheme();
+  const primaryShades = useMemo(() => buildShades(colorHex(palette, "primary")), [palette]);
+  const dangerShades = useMemo(() => buildShades(colorHex(palette, "danger")), [palette]);
+  const warningShades = useMemo(() => buildShades(colorHex(palette, "warning")), [palette]);
 
   useEffect(() => {
     getSchedules().then(setSchedules);
@@ -83,25 +91,30 @@ const GuardsPage = () => {
 
   const confirmToggleStatus = async () => {
     if (!guardToToggle) return;
+    dispatch(showLoader());
     setIsUpdating(true);
-    const res = await updateUser(guardToToggle.id, {
-      active: !guardToToggle.active,
-    });
-    setIsUpdating(false);
-    if (res.success) {
-      dispatch(
-        showToast({
-          message: `Guardia ${!guardToToggle.active ? "activado" : "desactivado"}`,
-          type: "success",
-        }),
-      );
-      refreshTable();
-    } else {
-      dispatch(
-        showToast({ message: "Error al actualizar estado", type: "error" }),
-      );
+    try {
+      const res = await updateUser(guardToToggle.id, {
+        active: !guardToToggle.active,
+      });
+      if (res.success) {
+        dispatch(
+          showToast({
+            message: `Guardia ${!guardToToggle.active ? "activado" : "desactivado"}`,
+            type: "success",
+          }),
+        );
+        refreshTable();
+      } else {
+        dispatch(
+          showToast({ message: "Error al actualizar estado", type: "error" }),
+        );
+      }
+    } finally {
+      setIsUpdating(false);
+      setGuardToToggle(null);
+      dispatch(hideLoader());
     }
-    setGuardToToggle(null);
   };
 
   const handleOpenAssignment = (guard: UserResponse) => {
@@ -126,15 +139,15 @@ const GuardsPage = () => {
         label: "Guardia",
         render: (row: UserResponse) => (
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 font-black border border-slate-100 uppercase text-sm">
+            <div className="w-10 h-10 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 font-black border border-slate-100  text-sm">
               {row.name?.[0]}
               {row.lastName?.[0]}
             </div>
             <div>
-              <ITText className="font-black text-slate-800 uppercase text-[11px] tracking-tight line-clamp-1 block">
+              <ITText className="font-black text-slate-800  text-[11px] tracking-tight line-clamp-1 block">
                 {row.name} {row.lastName}
               </ITText>
-              <ITText className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">
+              <ITText className="text-[9px] font-bold text-slate-400  tracking-widest block">
                 @{row.username}
               </ITText>
             </div>
@@ -164,13 +177,13 @@ const GuardsPage = () => {
         label: "HORARIO / TURNO",
         render: (row: UserResponse) => (
           <div className="flex flex-col">
-            <ITText className="font-black text-slate-700 text-[11px] uppercase tracking-tight mb-1 block">
+            <ITText className="font-black text-slate-700 text-[11px]  tracking-tight mb-1 block">
               {row.schedule ? row.schedule.name : "SIN HORARIO"}
             </ITText>
             {row.schedule && (
               <div className="flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                <ITText className="text-slate-400 text-[9px] font-black uppercase tracking-widest block">
+                <ITText className="text-slate-400 text-[9px] font-black  tracking-widest block">
                   {row.schedule.startTime} - {row.schedule.endTime}
                 </ITText>
               </div>
@@ -192,12 +205,12 @@ const GuardsPage = () => {
         label: "OPERATIVIDAD",
         render: (row: UserResponse) => (
           <div className="flex flex-col">
-            <ITText className="font-black text-slate-700 text-[11px] uppercase tracking-tight mb-1 block">
-              {row.assignmentLogs?.length || 0} Tareas
+            <ITText className="font-black text-slate-700 text-[11px]  tracking-tight mb-1 block">
+              {row.assignments?.length || 0} Tareas
             </ITText>
             <div className="flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-              <ITText className="text-slate-400 text-[9px] font-black uppercase tracking-widest block">
+              <ITText className="text-slate-400 text-[9px] font-black  tracking-widest block">
                 CONTROL DIARIO
               </ITText>
             </div>
@@ -303,14 +316,21 @@ const GuardsPage = () => {
       >
         <div className="p-10 space-y-8">
           <div className="flex flex-col items-center text-center space-y-4">
-            <div className="w-20 h-20 rounded-3xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100 shadow-sm">
+            <div
+              className="w-20 h-20 rounded-3xl flex items-center justify-center border shadow-sm"
+              style={{
+                backgroundColor: warningShades[50],
+                color: warningShades[600],
+                borderColor: warningShades[100],
+              }}
+            >
               <FaClock size={40} />
             </div>
             <div>
-              <ITText className="text-xl font-black text-slate-800 uppercase tracking-tight block">
+              <ITText className="text-xl font-black text-slate-800  tracking-tight block">
                 Cambiar Turno
               </ITText>
-              <ITText className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mt-1 block">
+              <ITText className="text-slate-400 text-[10px] font-black  tracking-[0.2em] mt-1 block">
                 {changingScheduleUser?.name} {changingScheduleUser?.lastName}
               </ITText>
             </div>
@@ -325,12 +345,14 @@ const GuardsPage = () => {
               value: s.id,
             }))}
             value={changingScheduleUser?.scheduleId || ""}
-            onChange={(e: any) => {
+            onChange={async (e: any) => {
               const val = e.target.value;
               if (!changingScheduleUser) return;
-              updateUser(changingScheduleUser.id, {
-                scheduleId: val as string,
-              }).then((res) => {
+              dispatch(showLoader());
+              try {
+                const res = await updateUser(changingScheduleUser.id, {
+                  scheduleId: val as string,
+                });
                 if (res.success) {
                   dispatch(
                     showToast({
@@ -340,8 +362,17 @@ const GuardsPage = () => {
                   );
                   refreshTable();
                   setChangingScheduleUser(null);
+                } else {
+                  dispatch(
+                    showToast({
+                      message: "Error al actualizar horario",
+                      type: "error",
+                    }),
+                  );
                 }
-              });
+              } finally {
+                dispatch(hideLoader());
+              }
             }}
             className="!h-14 !rounded-2xl !bg-slate-50/50"
           />
@@ -350,7 +381,7 @@ const GuardsPage = () => {
             <ITButton
               variant="ghost"
               onClick={() => setChangingScheduleUser(null)}
-              className="px-10 font-black text-[10px] uppercase tracking-widest text-slate-400"
+              className="px-10 font-black text-[10px]  tracking-widest text-slate-400"
             >
               Cancelar
             </ITButton>
@@ -366,16 +397,21 @@ const GuardsPage = () => {
       >
         <div className="p-10 text-center">
           <div
-            className={`w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-8 border shadow-sm ${guardToToggle?.active ? "bg-rose-50 text-rose-500 border-rose-100" : "bg-emerald-50 text-emerald-500 border-emerald-100"}`}
+            className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-8 border shadow-sm"
+            style={{
+              backgroundColor: guardToToggle?.active ? dangerShades[50] : primaryShades[50],
+              color: guardToToggle?.active ? dangerShades[500] : primaryShades[500],
+              borderColor: guardToToggle?.active ? dangerShades[100] : primaryShades[100],
+            }}
           >
             <FaPowerOff size={32} />
           </div>
-          <ITText className="text-xl font-black text-slate-800 uppercase tracking-tight mb-3 block">
+          <ITText className="text-xl font-black text-slate-800  tracking-tight mb-3 block">
             {guardToToggle?.active
               ? "¿Desactivar Guardia?"
               : "¿Activar Guardia?"}
           </ITText>
-          <ITText className="text-slate-500 text-[11px] font-bold uppercase tracking-widest leading-relaxed mb-10 max-w-xs mx-auto block">
+          <ITText className="text-slate-500 text-[11px] font-bold  tracking-widest leading-relaxed mb-10 max-w-xs mx-auto block">
             {guardToToggle?.active
               ? "El guardia perderá el acceso a la application móvil y sus turnos activos serán suspendidos."
               : "El guardia recuperará el acceso y podrá retomar sus tareas y turnos asignados."}
@@ -383,7 +419,7 @@ const GuardsPage = () => {
           <div className="flex gap-4 justify-center">
             <ITButton
               variant="ghost"
-              className="px-8 font-black text-[11px] uppercase tracking-widest text-slate-400"
+              className="px-8 font-black text-[11px]  tracking-widest text-slate-400"
               onClick={() => setGuardToToggle(null)}
             >
               Cancelar
@@ -409,6 +445,7 @@ const GuardsPage = () => {
             guardId={selectedGuard.id}
             guardName={`${selectedGuard.name} ${selectedGuard.lastName}`}
             onSuccess={handleSuccess}
+            assignedBy={auth.id || 1}
           />
           <ViewAssignmentsModal
             isOpen={isViewModalOpen}

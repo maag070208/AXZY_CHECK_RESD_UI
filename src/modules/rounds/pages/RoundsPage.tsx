@@ -1,4 +1,5 @@
 import { ModuleHeader } from "@app/core/components/ModuleHeader";
+import { hideLoader, showLoader } from "@app/core/store/loader/loader.slice";
 import { showToast } from "@app/core/store/toast/toast.slice";
 import {
   ITBadget,
@@ -90,15 +91,20 @@ const RoundsPage = () => {
 
   const confirmEndRound = async () => {
     if (!roundToFinishId || isFinishing) return;
+    dispatch(showLoader());
     setIsFinishing(true);
-    const res = await endRound(roundToFinishId);
-    setIsFinishing(false);
-    setRoundToFinishId(null);
-    if (res.success) {
-      dispatch(showToast({ message: "Ronda finalizada", type: "success" }));
-      setRefreshKey((prev) => prev + 1);
-    } else {
-      dispatch(showToast({ message: "Error al finalizar", type: "error" }));
+    try {
+      const res = await endRound(roundToFinishId);
+      if (res.success) {
+        dispatch(showToast({ message: "Ronda finalizada", type: "success" }));
+        setRefreshKey((prev) => prev + 1);
+      } else {
+        dispatch(showToast({ message: "Error al finalizar", type: "error" }));
+      }
+    } finally {
+      setIsFinishing(false);
+      setRoundToFinishId(null);
+      dispatch(hideLoader());
     }
   };
 

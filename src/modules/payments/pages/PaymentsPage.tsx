@@ -9,6 +9,7 @@ import {
   ITDialog,
   ITText,
   ITTripleFilter,
+  useITTheme,
 } from "@axzydev/axzy_ui_system";
 import dayjs from "dayjs";
 import { useCallback, useMemo, useState, useEffect } from "react";
@@ -34,6 +35,23 @@ const PaymentsPage = () => {
   const dispatch = useDispatch();
   const auth = useSelector((state: AppState) => state.auth);
   const isResident = auth.role === "RESDN";
+
+  const { palette } = useITTheme();
+  const MONTH_COLORS = useMemo(() => [
+    { bg: "var(--color-primary-50, #ecfdf5)", text: "var(--color-primary-600, #065f46)", dot: "var(--color-primary-500, #10b981)" },
+    { bg: "var(--color-secondary-50, #f0fdf4)", text: "var(--color-secondary-600, #166534)", dot: "var(--color-secondary-500, #22c55e)" },
+    { bg: "var(--color-warning-50, #fffbeb)", text: "var(--color-warning-600, #b45309)", dot: "var(--color-warning-500, #f59e0b)" },
+    { bg: "var(--color-info-50, #eff6ff)", text: "var(--color-info-600, #1d4ed8)", dot: "var(--color-info-500, #3b82f6)" },
+    { bg: "var(--color-success-50, #f0fdf4)", text: "var(--color-success-600, #166534)", dot: "var(--color-success-500, #16a34a)" },
+    { bg: "var(--color-danger-50, #fef2f2)", text: "var(--color-danger-600, #991b1b)", dot: "var(--color-danger-500, #ef4444)" },
+  ], [palette]);
+
+  const getPeriodColorIdx = (period: string | null) => {
+    if (!period) return 0;
+    const hashCode = period.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+    return Math.abs(hashCode) % MONTH_COLORS.length;
+  };
+
   const [refreshKey, setRefreshKey] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
@@ -47,6 +65,16 @@ const PaymentsPage = () => {
     dayjs().startOf("month").toDate(),
     dayjs().endOf("month").toDate(),
   ]);
+  const [committedDateRange, setCommittedDateRange] = useState<[Date | null, Date | null]>([
+    dayjs().startOf("month").toDate(),
+    dayjs().endOf("month").toDate(),
+  ]);
+
+  useEffect(() => {
+    if (dateRange[0] && dateRange[1]) {
+      setCommittedDateRange(dateRange);
+    }
+  }, [dateRange]);
   const [allPayments, setAllPayments] = useState<PaymentResponse[]>([]);
   const [allPaymentsLoading, setAllPaymentsLoading] = useState(false);
 
@@ -66,11 +94,13 @@ const PaymentsPage = () => {
     if (activeFilter === "PAID") f.status = "PAID";
     if (activeTypeFilter === "MANUAL") f.feeId = "null";
     if (activeTypeFilter === "MONTHLY") f.feeId = "notnull";
-    if (dateRange[0]) f.dateFrom = dateRange[0].toISOString();
-    if (dateRange[1]) f.dateTo = dateRange[1].toISOString();
+    if (committedDateRange[0] && committedDateRange[1]) {
+      f.dateFrom = committedDateRange[0].toISOString();
+      f.dateTo = committedDateRange[1].toISOString();
+    }
     if (searchTerm) f.search = searchTerm;
     return f;
-  }, [activeFilter, activeTypeFilter, dateRange, searchTerm]);
+  }, [activeFilter, activeTypeFilter, committedDateRange, searchTerm]);
 
   useEffect(() => {
     fetchAllPayments(externalFilters);
@@ -151,42 +181,60 @@ const PaymentsPage = () => {
       {
         key: "fee",
         label: "CUOTA",
-        render: (row: PaymentResponse) => (
-          <div className="flex flex-col">
-            <ITText className="font-black text-slate-700 text-[11px] uppercase tracking-tight mb-0.5">
-              {row.fee?.name}
+        render: (row: PaymentResponse) => {
+          const cIdx = getPeriodColorIdx(row.period);
+          const mc = MONTH_COLORS[cIdx];
+          return (
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 mb-0.5">
+                {row.period && (
+                  <span
+                    className="w-2 h-2 rounded-full shrink-0"
+                    style={{ backgroundColor: mc.dot }}
+                  />
+                )}
+                <ITText className="font-black text-slate-700 text-[11px] uppercase tracking-tight">
+                  {row.fee?.name}
+                </ITText>
+              </div>
               {row.period && (
-                <span className="font-normal text-slate-400 ml-1.5 lowercase">
+                <span
+                  className="text-[10px] font-bold px-2 py-0.5 rounded-md w-fit mb-1"
+                  style={{
+                    backgroundColor: mc.bg,
+                    color: mc.text,
+                  }}
+                >
                   {dayjs(row.period, "YYYY-MM").format("MMMM YYYY")}
                 </span>
               )}
-            </ITText>
-            <div className="flex items-center gap-1.5">
-              <ITText className="text-slate-500 text-[10px] font-bold">
-                {new Intl.NumberFormat("es-MX", {
-                  style: "currency",
-                  currency: "MXN",
-                }).format(row.amount)}
-              </ITText>
-              {row.fee?.type === "MONTHLY" && row.fee?.dueDate && (
-                <>
-                  <span className="text-slate-300 text-[10px]">•</span>
-                  <ITText className="text-slate-400 text-[10px] font-medium">
-                    Vence {dayjs(row.fee.dueDate).format("DD/MM/YYYY")}
+              <div className="flex items-center gap-1.5">
+                <ITText className="text-slate-500 text-[10px] font-bold">
+                  {new Intl.NumberFormat("es-MX", {
+                    style: "currency",
+                    currency: "MXN",
+                  }).format(row.amount)}
+                </ITText>
+                {row.fee?.type === "MONTHLY" && row.fee?.dueDate && (
+                  <>
+                    <span className="text-slate-300 text-[10px]">•</span>
+                    <ITText className="text-slate-400 text-[10px] font-medium">
+                      Vence {dayjs(row.fee.dueDate).format("DD/MM/YYYY")}
+                    </ITText>
+                  </>
+                )}
+              </div>
+              {row.status === "PAID" && (
+                <div className="flex items-center gap-1 mt-1.5">
+                  <span className="w-1 h-1 rounded-full bg-emerald-400" />
+                  <ITText className="text-emerald-600 text-[9px] font-bold font-mono tracking-widest uppercase">
+                    Folio {row.id.slice(0, 8).toUpperCase()}
                   </ITText>
-                </>
+                </div>
               )}
             </div>
-            {row.status === "PAID" && (
-              <div className="flex items-center gap-1 mt-1.5">
-                <span className="w-1 h-1 rounded-full bg-emerald-400" />
-                <ITText className="text-emerald-600 text-[9px] font-bold font-mono tracking-widest uppercase">
-                  Folio {row.id.slice(0, 8).toUpperCase()}
-                </ITText>
-              </div>
-            )}
-          </div>
-        ),
+          );
+        },
       },
       {
         key: "dueDate",

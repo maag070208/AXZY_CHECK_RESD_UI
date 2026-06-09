@@ -1,3 +1,4 @@
+import { showLoader, hideLoader } from "@app/core/store/loader/loader.slice";
 import { showToast } from "@app/core/store/toast/toast.slice";
 import { ITButton, ITDialog, ITText } from "@axzydev/axzy_ui_system";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -101,6 +102,7 @@ const BulkAssignFeeDialog = ({ isOpen, onClose, onSuccess }: Props) => {
   const handleSubmit = async () => {
     if (!selectedFeeId) return;
     setSubmitting(true);
+    dispatch(showLoader());
 
     const selected = Array.from(selectedIds);
     const original = Array.from(originalIds);
@@ -109,40 +111,51 @@ const BulkAssignFeeDialog = ({ isOpen, onClose, onSuccess }: Props) => {
 
     let success = true;
 
-    if (toAdd.length > 0) {
-      const res = await bulkAssignResidentFees({
-        residentIds: toAdd,
-        feeId: selectedFeeId,
-      });
-      if (!res.success) success = false;
-    }
+    try {
+      if (toAdd.length > 0) {
+        const res = await bulkAssignResidentFees({
+          residentIds: toAdd,
+          feeId: selectedFeeId,
+        });
+        if (!res.success) success = false;
+      }
 
-    if (toRemove.length > 0) {
-      const res = await bulkUnassignResidentFees({
-        residentIds: toRemove,
-        feeId: selectedFeeId,
-      });
-      if (!res.success) success = false;
-    }
+      if (toRemove.length > 0) {
+        const res = await bulkUnassignResidentFees({
+          residentIds: toRemove,
+          feeId: selectedFeeId,
+        });
+        if (!res.success) success = false;
+      }
 
-    if (success) {
+      if (success) {
+        dispatch(
+          showToast({
+            message: "Cuotas actualizadas correctamente",
+            type: "success",
+          }),
+        );
+        onSuccess();
+        onClose();
+      } else {
+        dispatch(
+          showToast({
+            message: "Error al actualizar cuotas",
+            type: "error",
+          }),
+        );
+      }
+    } catch (error) {
       dispatch(
         showToast({
-          message: "Cuotas actualizadas correctamente",
-          type: "success",
-        }),
-      );
-      onSuccess();
-      onClose();
-    } else {
-      dispatch(
-        showToast({
-          message: "Error al actualizar cuotas",
+          message: "Error de red al actualizar cuotas",
           type: "error",
         }),
       );
+    } finally {
+      setSubmitting(false);
+      dispatch(hideLoader());
     }
-    setSubmitting(false);
   };
 
   return (
