@@ -43,6 +43,10 @@ export interface PaymentResponse {
       name: string;
       lastName: string | null;
     } | null;
+    house?: {
+      number: string;
+      street: string;
+    } | null;
   } | null;
   fee?: {
     id: string;

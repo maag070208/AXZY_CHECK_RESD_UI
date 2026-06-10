@@ -35,6 +35,7 @@ import {
   fetchRecentPayments,
   RecentIncident,
 } from "../services/DashboardService";
+import type { PaymentResponse } from "../../payments/services/PaymentsService";
 import { buildShades, colorHex, ThemeColor } from "../utils/theme.utils";
 
 const formatCurrency = (n: number) =>
@@ -75,7 +76,7 @@ const HomePage = () => {
   const [activeTab, setActiveTab] = useState<"nav" | "analytics" | "detail">("nav");
   const [counts, setCounts] = useState<DashboardCounts | null>(null);
   const [recentIncidents, setRecentIncidents] = useState<RecentIncident[]>([]);
-  const [recentPayments, setRecentPayments] = useState<any[]>([]);
+  const [recentPayments, setRecentPayments] = useState<PaymentResponse[]>([]);
   const [loadingDashboard, setLoadingDashboard] = useState(true);
   const [paymentDateRange, setPaymentDateRange] = useState<[Date | null, Date | null]>([dayjs().startOf("month").toDate(), dayjs().endOf("month").startOf("day").toDate()]);
   const [committedPaymentRange, setCommittedPaymentRange] = useState<[Date | null, Date | null]>([dayjs().startOf("month").toDate(), dayjs().endOf("month").startOf("day").toDate()]);
@@ -332,16 +333,18 @@ const HomePage = () => {
                         <li key={p.id} className="px-4 py-2.5 flex items-center justify-between text-xs">
                           <div className="min-w-0 flex-1">
                             <div className="font-semibold text-slate-800 truncate">
-                              {p.resident?.name ?? "Residente"} {p.resident?.lastName ?? ""}
+                              {p.resident?.user?.name ?? "Residente"} {p.resident?.user?.lastName ?? ""}
                             </div>
-                            <div className="text-[10px] text-slate-500">
-                              {p.fee?.name ?? p.feeName ?? "Cuota"} · {dayjs(p.createdAt).format("DD MMM")}
+                            <div className="text-[10px] text-slate-500 truncate">
+                              {p.resident?.house
+                                ? `${p.resident.house.street} ${p.resident.house.number}`
+                                : "Sin domicilio"} · {p.fee?.name ?? "Cuota"}
                             </div>
                           </div>
                           <div className="text-right shrink-0 ml-3">
                             <div className="font-bold text-slate-800 tabular-nums">{formatCurrency(Number(p.amount ?? 0))}</div>
-                            <div className="flex items-center justify-end gap-1 text-[10px] text-slate-500">
-                              <FaCheckCircle className="text-emerald-500" size={9} />
+                            <div className="flex items-center justify-end gap-1 text-[10px] font-medium" style={{ color: primaryShades[600] }}>
+                              <FaCheckCircle size={9} />
                               Pagado
                             </div>
                           </div>

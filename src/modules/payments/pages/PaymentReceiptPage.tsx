@@ -13,6 +13,14 @@ const statusConfig: Record<string, { label: string; color: "success" | "warning"
   FAILED: { label: "FALLIDO", color: "danger" },
 };
 
+const actionLabels: Record<string, string> = {
+  CREATE: "Creado",
+  STATUS_CHANGE: "Cambio de estado",
+};
+
+const translateAction = (action: string) => actionLabels[action] || action;
+const translateStatus = (status: string) => statusConfig[status]?.label || status;
+
 const PaymentReceiptPage = () => {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
@@ -25,6 +33,7 @@ const PaymentReceiptPage = () => {
 
   const { palette } = useITTheme();
   const primaryShades = useMemo(() => buildShades(colorHex(palette, "primary")), [palette]);
+  const warningShades = useMemo(() => buildShades(colorHex(palette, "warning")), [palette]);
 
   useEffect(() => {
     if (!id) return;
@@ -155,30 +164,33 @@ const PaymentReceiptPage = () => {
           <div
             className="p-6 md:p-8"
             style={{
-              backgroundColor: payment.status === "PAID" ? primaryShades[50] : "#fef3c7",
+              backgroundColor: payment.status === "PAID" ? primaryShades[600] : warningShades[600],
             }}
           >
             <div className="flex items-center justify-between mb-3">
               <ITBadget color={status.color} size="medium" className="!text-[10px] tracking-widest font-black uppercase">
                 {status.label}
               </ITBadget>
-              <ITText className="text-[9px] font-mono font-black text-slate-300 uppercase tracking-wider hidden md:block print:block">
+              <ITText className="text-[9px] font-mono font-black text-white/60 uppercase tracking-wider hidden md:block print:block">
                 #{payment.id.slice(0, 8).toUpperCase()}
               </ITText>
             </div>
 
             {payment.status === "PAID" && (
               <div className="flex items-center gap-3">
-                <FaCheckCircle size={24} style={{ color: primaryShades[500] }} />
-                <ITText className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight block">
+                <FaCheckCircle size={24} style={{ color: "#ffffff" }} />
+                <ITText className="text-2xl md:text-3xl font-black text-white tracking-tight block">
                   Comprobante de Pago
                 </ITText>
               </div>
             )}
             {payment.status === "PENDING" && (
-              <ITText className="text-2xl font-black text-slate-800 tracking-tight block">
-                Pago en Proceso
-              </ITText>
+              <div className="flex items-center gap-3">
+                <ITLoader size="sm" className="text-white" />
+                <ITText className="text-xl md:text-2xl font-black text-white tracking-tight block">
+                  Pago en Proceso
+                </ITText>
+              </div>
             )}
           </div>
 
@@ -219,16 +231,14 @@ const PaymentReceiptPage = () => {
             {payment.status === "PAID" && (
               <div
                 className="rounded-xl p-4 flex items-center gap-3"
-                style={{ backgroundColor: primaryShades[50] }}
+                style={{ backgroundColor: primaryShades[600] }}
               >
-                <FaCheckCircle size={20} style={{ color: primaryShades[600] }} />
+                <FaCheckCircle size={20} style={{ color: "#ffffff" }} />
                 <div>
-                  <span className="text-[11px] font-black uppercase tracking-wider block"
-                    style={{ color: primaryShades[700] }}>
+                  <span className="text-[11px] font-black uppercase tracking-wider block text-white">
                     Pago confirmado
                   </span>
-                  <span className="text-[10px] font-bold block"
-                    style={{ color: primaryShades[600] }}>
+                  <span className="text-[10px] font-bold block text-white/70">
                     Este comprobante es valido para fines administrativos
                   </span>
                 </div>
@@ -245,9 +255,9 @@ const PaymentReceiptPage = () => {
                           {dayjs(log.createdAt).format("DD/MMM HH:mm")}
                         </span>
                         <span className="text-slate-300">—</span>
-                        <span className="font-bold text-slate-600">{log.action}</span>
+                        <span className="font-bold text-slate-600">{translateAction(log.action)}</span>
                         {log.statusTo && (
-                          <ITBadget color="success" size="small" className="!text-[7px]">{log.statusTo}</ITBadget>
+                          <ITBadget color="success" size="small" className="!text-[7px]">{translateStatus(log.statusTo)}</ITBadget>
                         )}
                       </div>
                     ))}
