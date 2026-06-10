@@ -95,8 +95,8 @@ const PaymentsPage = () => {
     if (activeTypeFilter === "MANUAL") f.feeId = "null";
     if (activeTypeFilter === "MONTHLY") f.feeId = "notnull";
     if (committedDateRange[0] && committedDateRange[1]) {
-      f.dateFrom = committedDateRange[0].toISOString();
-      f.dateTo = committedDateRange[1].toISOString();
+      f.dateFrom = dayjs(committedDateRange[0]).format("YYYY-MM-DD");
+      f.dateTo = dayjs(committedDateRange[1]).format("YYYY-MM-DD");
     }
     if (searchTerm) f.search = searchTerm;
     return f;
