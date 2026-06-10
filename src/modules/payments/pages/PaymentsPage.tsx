@@ -194,7 +194,7 @@ const PaymentsPage = () => {
                   />
                 )}
                 <ITText className="font-black text-slate-700 text-[11px] uppercase tracking-tight">
-                  {row.fee?.name}
+                  {row.fee?.name || row.reference || "Cargo único"}
                 </ITText>
               </div>
               {row.period && (
@@ -208,29 +208,21 @@ const PaymentsPage = () => {
                   {dayjs(row.period, "YYYY-MM").format("MMMM YYYY")}
                 </span>
               )}
-              <div className="flex items-center gap-1.5">
-                <ITText className="text-slate-500 text-[10px] font-bold">
-                  {new Intl.NumberFormat("es-MX", {
-                    style: "currency",
-                    currency: "MXN",
-                  }).format(row.amount)}
+              <span className="text-xs font-black tracking-tight mt-0.5 block" style={{ color: mc.text }}>
+                {new Intl.NumberFormat("es-MX", {
+                  style: "currency",
+                  currency: "MXN",
+                }).format(row.amount)}
+              </span>
+              {row.fee?.type === "MONTHLY" && row.fee?.dueDate && (
+                <ITText className="text-slate-400 text-[10px] font-medium mt-0.5">
+                  Vence {dayjs(row.fee.dueDate).format("DD/MM/YYYY")}
                 </ITText>
-                {row.fee?.type === "MONTHLY" && row.fee?.dueDate && (
-                  <>
-                    <span className="text-slate-300 text-[10px]">•</span>
-                    <ITText className="text-slate-400 text-[10px] font-medium">
-                      Vence {dayjs(row.fee.dueDate).format("DD/MM/YYYY")}
-                    </ITText>
-                  </>
-                )}
-              </div>
+              )}
               {row.status === "PAID" && (
-                <div className="flex items-center gap-1 mt-1.5">
-                  <span className="w-1 h-1 rounded-full bg-emerald-400" />
-                  <ITText className="text-emerald-600 text-[9px] font-bold font-mono tracking-widest uppercase">
-                    Folio {row.id.slice(0, 8).toUpperCase()}
-                  </ITText>
-                </div>
+                <span className="text-[9px] font-bold tracking-widest uppercase mt-1 block" style={{ color: "var(--color-primary-600, #065f46)" }}>
+                  Folio {row.id.slice(0, 8).toUpperCase()}
+                </span>
               )}
             </div>
           );
