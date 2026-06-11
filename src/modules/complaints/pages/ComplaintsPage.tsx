@@ -10,14 +10,16 @@ import {
   ITTripleFilter,
   ITInput,
   ITSelect,
+  useITTheme,
 } from "@axzydev/axzy_ui_system";
 import dayjs from "dayjs";
-import { useCallback, useMemo, useState, useEffect } from "react";
-import { FaPlus, FaEye, FaTrash, FaExclamationCircle } from "react-icons/fa";
+import { useCallback, useMemo, useState, useEffect, useRef } from "react";
+import { FaPlus, FaEye, FaTrash, FaExclamationCircle, FaComment } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { showLoader, hideLoader } from "@app/core/store/loader/loader.slice";
 import { useFormik } from "formik";
 import * as Yup from "yup";
+import Ably from "ably";
 import {
   ComplaintResponse,
   ComplaintCategoryResponse,
@@ -26,7 +28,9 @@ import {
   createComplaint,
   updateComplaint,
   deleteComplaint,
+  getComplaintById,
 } from "../services/ComplaintsService";
+import ComplaintDetailModal, { getStatusBadge } from "../components/ComplaintDetailModal";
 
 const ComplaintsPage = () => {
   const dispatch = useDispatch();
@@ -46,6 +50,17 @@ const ComplaintsPage = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const ablyClientRef = useRef<Ably.Realtime | null>(null);
+  const selectedComplaintIdRef = useRef<string | null>(null);
+
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+
+  const { palette } = useITTheme();
+  const primaryHex = palette?.primary || "#065911";
+
+  const totalUnread = useMemo(() => {
+    return Object.values(unreadCounts).reduce((acc, c) => acc + c, 0);
+  }, [unreadCounts]);
 
   useEffect(() => {
     loadCategories();
@@ -61,6 +76,48 @@ const ComplaintsPage = () => {
   useEffect(() => {
     setRefreshKey((prev) => prev + 1);
   }, [statusFilter]);
+
+  useEffect(() => {
+    selectedComplaintIdRef.current = selectedComplaint?.id ?? null;
+  }, [selectedComplaint?.id]);
+
+  useEffect(() => {
+    const ablyKey = import.meta.env.VITE_ABLY_KEY;
+    if (!ablyKey) return;
+
+    ablyClientRef.current = new Ably.Realtime({ key: ablyKey });
+    const updatesChannel = ablyClientRef.current.channels.get("complaint:updates");
+
+    const handler = (msg: any) => {
+      const { complaintId } = msg.data;
+      if (!complaintId) return;
+      if (complaintId === selectedComplaintIdRef.current) return;
+
+      setUnreadCounts((prev) => {
+        const next = { ...prev };
+        next[complaintId] = (next[complaintId] || 0) + 1;
+        return next;
+      });
+    };
+
+    updatesChannel.subscribe(handler);
+
+    return () => {
+      updatesChannel.unsubscribe();
+      ablyClientRef.current?.close();
+      ablyClientRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (selectedComplaint?.id) {
+      setUnreadCounts((prev) => {
+        const next = { ...prev };
+        delete next[selectedComplaint.id];
+        return next;
+      });
+    }
+  }, [selectedComplaint?.id]);
 
   const loadCategories = async () => {
     const res = await getComplaintCategories();
@@ -130,11 +187,11 @@ const ComplaintsPage = () => {
     onSubmit: handleCreateComplaint,
   });
 
-  const handleUpdateStatus = async (status: "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED") => {
+  const handleUpdateStatus = async (status: string) => {
     if (!selectedComplaint || isUpdatingStatus) return;
     setIsUpdatingStatus(true);
     dispatch(showLoader());
-    const res = await updateComplaint(selectedComplaint.id, { status });
+    const res = await updateComplaint(selectedComplaint.id, { status: status as ComplaintResponse["status"] });
     dispatch(hideLoader());
     setIsUpdatingStatus(false);
     if (res.success && res.data) {
@@ -171,29 +228,6 @@ const ComplaintsPage = () => {
         showToast({ message: "Error al eliminar la queja", type: "error" })
       );
     }
-  };
-
-  const getStatusBadge = (status: string) => {
-    let color: any = "gray";
-    let label = "ABIERTA";
-    if (status === "IN_PROGRESS") {
-      color = "warning";
-      label = "EN PROCESO";
-    } else if (status === "RESOLVED") {
-      color = "success";
-      label = "RESUELTA";
-    } else if (status === "CLOSED") {
-      color = "danger";
-      label = "CERRADA";
-    }
-    return (
-      <ITBadget
-        color={color}
-        size="small"
-      >
-        {label}
-      </ITBadget>
-    );
   };
 
   const columns = useMemo(() => {
@@ -417,133 +451,20 @@ const ComplaintsPage = () => {
       </ITDialog>
 
       {/* DETAIL DIALOG */}
-      <ITDialog
-        isOpen={!!selectedComplaint}
-        onClose={() => setSelectedComplaint(null)}
-        title="Detalle de Queja"
-      >
-        {selectedComplaint && (
-          <div className="p-5 space-y-4">
-            <div className="flex justify-between items-start">
-              <div>
-                <ITText className="text-xs text-slate-400 font-medium">
-                  {selectedComplaint.category?.name}
-                </ITText>
-                <h4 className="text-base font-bold text-slate-800 mt-0.5">
-                  {selectedComplaint.title}
-                </h4>
-              </div>
-              {getStatusBadge(selectedComplaint.status)}
-            </div>
-
-            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-              <ITText className="text-xs font-semibold text-slate-400 mb-1.5">
-                Descripción
-              </ITText>
-              <ITText className="text-slate-600 text-sm whitespace-pre-wrap leading-relaxed">
-                {selectedComplaint.description}
-              </ITText>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-white border border-slate-100 rounded-xl p-4 shadow-sm">
-                <ITText className="text-[10px] font-semibold text-slate-400">
-                  Fecha Registro
-                </ITText>
-                <ITText className="text-slate-700 font-semibold text-xs mt-1">
-                  {dayjs(selectedComplaint.createdAt).format("DD/MM/YYYY HH:mm")}
-                </ITText>
-              </div>
-
-              {!isResident && (
-                <div className="bg-white border border-slate-100 rounded-xl p-4 shadow-sm">
-                  <ITText className="text-[10px] font-semibold text-slate-400">
-                    Reportado por
-                  </ITText>
-                  <ITText className="text-slate-700 font-semibold text-xs mt-1 truncate">
-                    {selectedComplaint.resident?.user?.name}{" "}
-                    {selectedComplaint.resident?.user?.lastName}
-                  </ITText>
-                </div>
-              )}
-            </div>
-
-            {selectedComplaint.resolvedBy && (
-              <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4 flex items-center justify-between">
-                <div>
-                  <ITText className="text-[10px] font-semibold text-emerald-600">
-                    Atendido / Resuelto por
-                  </ITText>
-                  <ITText className="text-slate-700 font-semibold text-xs mt-1">
-                    {selectedComplaint.resolvedBy.name}{" "}
-                    {selectedComplaint.resolvedBy.lastName}
-                  </ITText>
-                </div>
-                {selectedComplaint.resolvedAt && (
-                  <div className="text-right">
-                    <ITText className="text-[10px] font-semibold text-emerald-600">
-                      Fecha Resolución
-                    </ITText>
-                    <ITText className="text-slate-700 font-semibold text-xs mt-1">
-                      {dayjs(selectedComplaint.resolvedAt).format("DD/MM/YYYY")}
-                    </ITText>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {isAdmin && (
-              <div className="border-t border-slate-100 pt-4">
-                <ITText className="text-xs font-semibold text-slate-400 mb-3">
-                  Acciones de Gestión
-                </ITText>
-                <div className="flex flex-wrap gap-2">
-                  {selectedComplaint.status !== "IN_PROGRESS" && (
-                    <ITButton
-                      variant="outlined"
-                      color="warning"
-                      onClick={() => handleUpdateStatus("IN_PROGRESS")}
-                      disabled={isUpdatingStatus}
-                    >
-                      En Progreso
-                    </ITButton>
-                  )}
-                  {selectedComplaint.status !== "RESOLVED" && (
-                    <ITButton
-                      variant="filled"
-                      color="success"
-                      onClick={() => handleUpdateStatus("RESOLVED")}
-                      disabled={isUpdatingStatus}
-                    >
-                      Resolver
-                    </ITButton>
-                  )}
-                  {selectedComplaint.status !== "CLOSED" && (
-                    <ITButton
-                      variant="outlined"
-                      color="secondary"
-                      onClick={() => handleUpdateStatus("CLOSED")}
-                      disabled={isUpdatingStatus}
-                    >
-                      Cerrar
-                    </ITButton>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <div className="flex justify-end pt-3 border-t border-slate-100">
-              <ITButton
-                variant="outlined"
-                color="secondary"
-                onClick={() => setSelectedComplaint(null)}
-              >
-                Cerrar Ventana
-              </ITButton>
-            </div>
-          </div>
-        )}
-      </ITDialog>
+      {selectedComplaint && (
+        <ComplaintDetailModal
+          complaint={selectedComplaint}
+          isOpen={!!selectedComplaint}
+          onClose={() => setSelectedComplaint(null)}
+          isResident={isResident}
+          isAdmin={isAdmin}
+          authId={auth.id}
+          primaryHex={primaryHex}
+          totalUnread={totalUnread}
+          onUpdateStatus={handleUpdateStatus}
+          isUpdatingStatus={isUpdatingStatus}
+        />
+      )}
 
       {/* DELETE DIALOG */}
       <ITDialog
@@ -581,6 +502,26 @@ const ComplaintsPage = () => {
           </div>
         </div>
       </ITDialog>
+
+      {totalUnread > 0 && !selectedComplaint && (
+        <button
+          onClick={async () => {
+            const firstUnreadId = Object.keys(unreadCounts)[0];
+            if (firstUnreadId) {
+              const res = await getComplaintById(firstUnreadId);
+              if (res.success && res.data) {
+                setSelectedComplaint(res.data);
+              }
+            }
+          }}
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-2xl shadow-lg border border-white/20 text-white transition-all hover:scale-105 active:scale-95"
+          style={{ backgroundColor: primaryHex }}
+        >
+          <FaComment size={16} />
+          <span className="font-bold text-sm">{totalUnread}</span>
+          <span className="text-xs opacity-90">mensaje{totalUnread !== 1 ? "s" : ""} nuevo{totalUnread !== 1 ? "s" : ""}</span>
+        </button>
+      )}
     </div>
   );
 };

@@ -57,6 +57,19 @@ export interface UpdateComplaintDTO {
   status?: "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED";
 }
 
+export interface ComplaintMessageResponse {
+  id: string;
+  complaintId: string;
+  userId: string;
+  message: string;
+  createdAt: string;
+  user: {
+    id: string;
+    name: string;
+    lastName: string | null;
+  };
+}
+
 export const getPaginatedComplaints = async (
   params: any
 ): Promise<{ data: ComplaintResponse[]; total: number }> => {
@@ -96,4 +109,23 @@ export const deleteComplaint = async (
   id: string
 ): Promise<TResult<ComplaintResponse>> => {
   return await remove<ComplaintResponse>(`/complaints/${id}`);
+};
+
+export const getComplaintMessages = async (
+  complaintId: string
+): Promise<TResult<ComplaintMessageResponse[]>> => {
+  return await get<ComplaintMessageResponse[]>(`/complaints/${complaintId}/messages`);
+};
+
+export const createComplaintMessage = async (
+  complaintId: string,
+  message: string
+): Promise<TResult<ComplaintMessageResponse>> => {
+  return await post<ComplaintMessageResponse>(`/complaints/${complaintId}/messages`, { message });
+};
+
+export const getComplaintById = async (
+  id: string
+): Promise<TResult<ComplaintResponse>> => {
+  return await get<ComplaintResponse>(`/complaints/${id}`);
 };
