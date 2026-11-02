@@ -99,6 +99,7 @@ const ComplaintDetailModal: React.FC<ComplaintDetailModalProps> = ({
     const res = await createComplaintMessage(complaint.id, newMessage.trim());
     if (res.success) {
       setNewMessage("");
+      await loadMessages();
     }
     setSendingMessage(false);
   };
@@ -135,19 +136,26 @@ const ComplaintDetailModal: React.FC<ComplaintDetailModalProps> = ({
 
   return (
     <ITDialog isOpen={isOpen} onClose={onClose} title="Detalle de Queja">
-      <div className="flex flex-col h-[620px] w-[600px] overflow-hidden">
-        {/* Header - Más espaciado y limpio */}
-        <div className="px-6 pt-5 pb-3 border-b border-slate-100">
+      <div className="flex flex-col h-[680px] w-[640px] overflow-hidden bg-white">
+        {/* Header minimalista */}
+        <div className="px-6 pt-6 pb-4 border-b border-gray-100">
           <div className="flex justify-between items-start gap-4">
             <div className="flex-1">
-              <ITText className="text-xs text-slate-400 font-medium mb-1">
-                {complaint.category?.name}
-              </ITText>
-              <h4 className="text-lg font-bold text-slate-800 leading-tight">
+              {complaint.category?.name && (
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="w-1 h-1 rounded-full bg-gray-400" />
+                  <ITText className="text-xs text-gray-400 font-medium">
+                    {complaint.category.name}
+                  </ITText>
+                </div>
+              )}
+              <h4 className="text-xl font-semibold text-gray-900 leading-tight tracking-tight">
                 {complaint.title}
               </h4>
             </div>
-            {getStatusBadge(complaint.status)}
+            <div className="flex-shrink-0">
+              {getStatusBadge(complaint.status)}
+            </div>
           </div>
         </div>
 
@@ -158,34 +166,28 @@ const ComplaintDetailModal: React.FC<ComplaintDetailModalProps> = ({
               label: "Detalles",
               content: (
                 <div className="px-6 py-5 space-y-5 overflow-y-auto h-full">
-                  {/* Estado cerrado */}
+                  {/* Closed banner minimal */}
                   {complaint.status === "CLOSED" && (
-                    <div
-                      className="rounded-xl p-4 flex items-center gap-3 border"
-                      style={{ backgroundColor: primaryHex + "08", borderColor: primaryHex + "20" }}
-                    >
-                      <div
-                        className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                        style={{ backgroundColor: primaryHex + "15" }}
-                      >
-                        <FaLock size={14} style={{ color: primaryHex }} />
+                    <div className="bg-gray-50 rounded-xl p-4 flex items-center gap-3 border border-gray-100">
+                      <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                        <FaLock size={12} className="text-gray-400" />
                       </div>
                       <div>
-                        <span className="text-xs font-bold" style={{ color: primaryHex }}>
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                           Queja Cerrada
                         </span>
-                        <ITText className="text-xs text-slate-500 mt-0.5">
+                        <ITText className="text-xs text-gray-400 mt-0.5">
                           Esta queja está cerrada y no admite modificaciones
                         </ITText>
                       </div>
                     </div>
                   )}
 
-                  {/* Flujo de estado - Más espaciado y legible */}
+                  {/* Progress stepper minimal */}
                   {complaint.status !== "CLOSED" && (
-                    <div className="bg-slate-50 rounded-xl p-5 border border-slate-100">
-                      <ITText className="text-[11px] font-semibold text-slate-400 mb-4 uppercase tracking-wider">
-                        Progreso de la Queja
+                    <div className="bg-white rounded-xl p-5 border border-gray-100">
+                      <ITText className="text-[11px] font-semibold text-gray-400 mb-4 uppercase tracking-wider">
+                        Progreso
                       </ITText>
                       <div className="flex items-start">
                         {STATUS_FLOW.map((s, i, arr) => {
@@ -197,17 +199,17 @@ const ComplaintDetailModal: React.FC<ComplaintDetailModalProps> = ({
                             <div key={s} className="flex items-start flex-1">
                               <div className="flex flex-col items-center">
                                 <div
-                                  className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all"
+                                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-all"
                                   style={{
                                     backgroundColor: isPast ? primaryHex : isCurrent ? primaryHex : "#f1f5f9",
                                     color: isPast || isCurrent ? "#fff" : "#94a3b8",
-                                    boxShadow: isCurrent ? `0 0 0 3px ${primaryHex}25` : "none",
+                                    boxShadow: isCurrent ? `0 0 0 2px ${primaryHex}20` : "none",
                                   }}
                                 >
-                                  {isPast ? <FaCheck size={12} /> : i + 1}
+                                  {isPast ? <FaCheck size={10} /> : i + 1}
                                 </div>
                                 <span
-                                  className="text-[10px] font-semibold mt-2 text-center"
+                                  className="text-[10px] font-medium mt-2 text-center whitespace-nowrap"
                                   style={{
                                     color: isPast || isCurrent ? primaryHex : "#94a3b8",
                                   }}
@@ -217,7 +219,7 @@ const ComplaintDetailModal: React.FC<ComplaintDetailModalProps> = ({
                               </div>
                               {i < arr.length - 1 && (
                                 <div
-                                  className="flex-1 h-0.5 mt-4 -ml-1 mr-1"
+                                  className="flex-1 h-0.5 mt-3 -ml-1 mr-1"
                                   style={{
                                     backgroundColor: i < currentStep ? primaryHex : "#e2e8f0",
                                   }}
@@ -230,62 +232,64 @@ const ComplaintDetailModal: React.FC<ComplaintDetailModalProps> = ({
                     </div>
                   )}
 
-                  {/* Descripción */}
+                  {/* Description card minimal */}
                   <div className="space-y-2">
-                    <ITText className="text-xs font-semibold text-slate-400">
+                    <ITText className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
                       Descripción
                     </ITText>
-                    <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                      <ITText className="text-slate-600 text-sm whitespace-pre-wrap leading-relaxed">
+                    <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                      <ITText className="text-gray-600 text-sm whitespace-pre-wrap leading-relaxed">
                         {complaint.description}
                       </ITText>
                     </div>
                   </div>
 
-                  {/* Información adicional - Grid más espaciada */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white border border-slate-100 rounded-xl p-3">
-                      <ITText className="text-[10px] font-semibold text-slate-400 uppercase mb-1">
-                        Fecha Registro
+                  {/* Info grid minimal */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-white border border-gray-100 rounded-xl p-3">
+                      <ITText className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                        Registro
                       </ITText>
-                      <ITText className="text-slate-700 font-semibold text-sm">
+                      <ITText className="text-gray-700 font-medium text-sm">
                         {dayjs(complaint.createdAt).format("DD/MM/YYYY HH:mm")}
                       </ITText>
                     </div>
 
-                    {!isResident && (
-                      <div className="bg-white border border-slate-100 rounded-xl p-3">
-                        <ITText className="text-[10px] font-semibold text-slate-400 uppercase mb-1">
+                    {!isResident && complaint.resident?.user && (
+                      <div className="bg-white border border-gray-100 rounded-xl p-3">
+                        <ITText className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
                           Reportado por
                         </ITText>
-                        <ITText className="text-slate-700 font-semibold text-sm truncate">
-                          {complaint.resident?.user?.name} {complaint.resident?.user?.lastName}
+                        <ITText className="text-gray-700 font-medium text-sm truncate">
+                          {complaint.resident.user.name} {complaint.resident.user.lastName || ""}
                         </ITText>
                       </div>
                     )}
                   </div>
 
-                  {/* Resolución */}
+                  {/* Resolution card minimal */}
                   {complaint.resolvedBy && (
-                    <div 
-                      className="rounded-xl p-4 space-y-2 border" 
-                      style={{ backgroundColor: primaryHex + "06", borderColor: primaryHex + "20" }}
-                    >
+                    <div className="bg-white rounded-xl p-4 border border-gray-100">
                       <div className="flex justify-between items-start">
-                        <div>
-                          <span className="text-[10px] font-semibold uppercase" style={{ color: primaryHex }}>
-                            Atendido / Resuelto por
-                          </span>
-                          <ITText className="text-slate-700 font-semibold text-sm mt-1">
-                            {complaint.resolvedBy.name} {complaint.resolvedBy.lastName}
-                          </ITText>
+                        <div className="flex items-center gap-3">
+                          <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: `${primaryHex}10` }}>
+                            <FaCheck size={10} style={{ color: primaryHex }} />
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                              Resuelto por
+                            </span>
+                            <ITText className="text-gray-700 font-medium text-sm mt-0.5">
+                              {complaint.resolvedBy.name} {complaint.resolvedBy.lastName || ""}
+                            </ITText>
+                          </div>
                         </div>
                         {complaint.resolvedAt && (
                           <div className="text-right">
-                            <span className="text-[10px] font-semibold uppercase" style={{ color: primaryHex }}>
-                              Fecha Resolución
+                            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                              Fecha
                             </span>
-                            <ITText className="text-slate-700 font-semibold text-sm mt-1">
+                            <ITText className="text-gray-700 font-medium text-sm mt-0.5">
                               {dayjs(complaint.resolvedAt).format("DD/MM/YYYY")}
                             </ITText>
                           </div>
@@ -294,40 +298,36 @@ const ComplaintDetailModal: React.FC<ComplaintDetailModalProps> = ({
                     </div>
                   )}
 
-                  {/* Acciones de gestión - Más organizado */}
+                  {/* Admin actions minimal */}
                   {isAdmin && complaint.status !== "CLOSED" && (
-                    <div className="border-t border-slate-100 pt-5 mt-2">
-                      <ITText className="text-xs font-semibold text-slate-400 mb-3">
-                        Acciones de Gestión
+                    <div className="border-t border-gray-100 pt-5 mt-2">
+                      <ITText className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                        Acciones
                       </ITText>
                       <div className="flex flex-wrap gap-2">
                         {getAvailableTransitions(complaint.status).map((nextStatus) => {
-                          interface BtnConfig {
-                            variant: "filled" | "outlined";
-                            color: "warning" | "success" | "secondary";
-                            label: string;
-                            icon?: React.ReactNode;
-                          }
-                          const btnProps: BtnConfig =
-                            nextStatus === "IN_PROGRESS"
-                              ? { variant: "outlined", color: "warning", label: "Marcar en Progreso" }
-                              : nextStatus === "RESOLVED"
-                              ? { variant: "filled", color: "success", label: "Resolver Queja", icon: <FaCheck size={12} /> }
-                              : { variant: "filled", color: "secondary", label: "Cerrar Queja", icon: <FaLock size={12} /> };
-
+                          const isInProgress = nextStatus === "IN_PROGRESS";
+                          const isResolved = nextStatus === "RESOLVED";
+                          const isClosed = nextStatus === "CLOSED";
+                          
                           return (
                             <ITButton
                               key={nextStatus}
-                              variant={btnProps.variant}
-                              color={btnProps.color}
+                              variant={isInProgress ? "outlined" : "filled"}
+                              color={
+                                isInProgress ? "warning" : isResolved ? "success" : "secondary"
+                              }
                               onClick={() => onUpdateStatus(nextStatus)}
                               disabled={isUpdatingStatus}
                               size="small"
                             >
-                            <div className="flex items-center gap-1">
-                                {btnProps.icon && <span className="mr-1.5">{btnProps.icon}</span>}
-                              {btnProps.label}
-                            </div>
+                              <div className="flex items-center gap-1.5">
+                                {isResolved && <FaCheck size={11} />}
+                                {isClosed && <FaLock size={11} />}
+                                <span>
+                                  {isInProgress ? "En Progreso" : isResolved ? "Resolver" : "Cerrar"}
+                                </span>
+                              </div>
                             </ITButton>
                           );
                         })}
@@ -356,18 +356,20 @@ const ComplaintDetailModal: React.FC<ComplaintDetailModalProps> = ({
               content: (
                 <div className="flex flex-col h-full">
                   {/* Chat messages */}
-                  <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-slate-50/30">
+                  <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-gray-50/30">
                     {loadingMessages ? (
                       <div className="flex justify-center py-12">
                         <ITLoader size="sm" />
                       </div>
                     ) : messages.length === 0 ? (
                       <div className="text-center py-12">
-                        <FaComment size={32} className="text-slate-300 mx-auto mb-2" />
-                        <ITText className="text-sm text-slate-400">
+                        <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
+                          <FaComment size={20} className="text-gray-300" />
+                        </div>
+                        <ITText className="text-sm text-gray-400">
                           No hay mensajes aún
                         </ITText>
-                        <ITText className="text-xs text-slate-300 mt-1">
+                        <ITText className="text-xs text-gray-300 mt-1">
                           Sé el primero en escribir
                         </ITText>
                       </div>
@@ -378,21 +380,21 @@ const ComplaintDetailModal: React.FC<ComplaintDetailModalProps> = ({
                           <div key={msg.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
                             <div className={`max-w-[75%] ${!isMine ? "pr-8" : "pl-8"}`}>
                               {!isMine && (
-                                <ITText className="text-[11px] font-semibold text-slate-500 mb-1 ml-1">
+                                <ITText className="text-[11px] font-medium text-gray-500 mb-1 ml-1">
                                   {msg.user?.name}
                                 </ITText>
                               )}
                               <div
                                 className={`px-3.5 py-2.5 text-sm leading-relaxed ${
                                   isMine
-                                    ? "text-white rounded-2xl rounded-br-md"
-                                    : "bg-white border border-slate-200 rounded-2xl rounded-bl-md text-slate-700"
+                                    ? "text-white rounded-2xl rounded-br-md shadow-sm"
+                                    : "bg-white border border-gray-100 rounded-2xl rounded-bl-md text-gray-700 shadow-sm"
                                 }`}
                                 style={isMine ? { backgroundColor: primaryHex } : undefined}
                               >
                                 {msg.message}
                               </div>
-                              <ITText className="text-[10px] text-slate-400 mt-1 block text-right">
+                              <ITText className="text-[10px] text-gray-400 mt-1 block text-right">
                                 {dayjs(msg.createdAt).format("HH:mm")}
                               </ITText>
                             </div>
@@ -403,16 +405,16 @@ const ComplaintDetailModal: React.FC<ComplaintDetailModalProps> = ({
                     <div ref={chatEndRef} />
                   </div>
 
-                  {/* Input area */}
+                  {/* Input area minimal */}
                   {complaint.status === "CLOSED" ? (
-                    <div className="border-t border-slate-200 px-4 py-3 bg-slate-50">
-                      <div className="flex items-center gap-2 text-slate-400">
+                    <div className="border-t border-gray-100 px-4 py-3 bg-gray-50">
+                      <div className="flex items-center gap-2 text-gray-400">
                         <FaLock size={12} />
-                        <span className="text-xs">El chat está cerrado</span>
+                        <span className="text-xs">Chat cerrado</span>
                       </div>
                     </div>
                   ) : (
-                    <div className="border-t border-slate-200 p-4 bg-white">
+                    <div className="border-t border-gray-100 p-4 bg-white">
                       <div className="flex items-center gap-2">
                         <input
                           type="text"
@@ -420,18 +422,24 @@ const ComplaintDetailModal: React.FC<ComplaintDetailModalProps> = ({
                           onChange={(e) => setNewMessage(e.target.value)}
                           onKeyDown={(e) => { if (e.key === "Enter") handleSendMessage(); }}
                           placeholder="Escribe un mensaje..."
-                          className="flex-1 text-sm px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-slate-300 focus:ring-1 focus:ring-slate-200 placeholder-slate-400 transition-all"
+                          className="flex-1 text-sm px-4 py-2.5 rounded-xl bg-gray-50 border-0 focus:outline-none focus:ring-2 focus:ring-gray-200 placeholder-gray-400 transition-all"
                           disabled={sendingMessage}
                         />
-                        <ITButton
-                          variant="filled"
-                          color="primary"
-                          size="small"
+                        <button
                           onClick={handleSendMessage}
                           disabled={sendingMessage || !newMessage.trim()}
+                          className="w-10 h-10 rounded-xl flex items-center justify-center transition-all"
+                          style={{
+                            backgroundColor: !newMessage.trim() ? "#e2e8f0" : primaryHex,
+                            cursor: !newMessage.trim() ? "not-allowed" : "pointer",
+                          }}
                         >
-                          {sendingMessage ? <ITLoader size="sm" /> : <FaPaperPlane size={14} />}
-                        </ITButton>
+                          {sendingMessage ? (
+                            <ITLoader size="sm" />
+                          ) : (
+                            <FaPaperPlane size={14} color={!newMessage.trim() ? "#94a3b8" : "#fff"} />
+                          )}
+                        </button>
                       </div>
                     </div>
                   )}
@@ -443,11 +451,14 @@ const ComplaintDetailModal: React.FC<ComplaintDetailModalProps> = ({
           className="flex-1"
         />
 
-        {/* Footer */}
-        <div className="flex justify-end px-6 py-4 border-t border-slate-100 bg-slate-50/30">
-          <ITButton variant="outlined" color="secondary" onClick={onClose}>
-            Cerrar Ventana
-          </ITButton>
+        {/* Footer minimal */}
+        <div className="flex justify-end px-6 py-4 border-t border-gray-100 bg-gray-50/50">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            Cerrar
+          </button>
         </div>
       </div>
     </ITDialog>
